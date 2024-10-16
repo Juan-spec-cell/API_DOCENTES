@@ -1,13 +1,11 @@
-const sequelize = require('sequelize');
-const db = new sequelize(
-    "c.e_docentes",//nombre de la base de datos
-    "root", //usuario
-    "Juan20022!", //contrasena
-    {
-        host: "localhost",
-        dialect: "mysql",
-        port: 3306,
-    }
-);
+require('dotenv').config();
+const { Sequelize } = require('sequelize');
+
+// Crear una instancia de Sequelize usando las variables de entorno
+const db = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT, // Agrega esta línea para el puerto
+    dialect: process.env.DB_DIALECT, // Utiliza el dialecto desde el .env
+});
 
 module.exports = db;
