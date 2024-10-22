@@ -1,5 +1,7 @@
 const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express'); 
+const path = require('path');
+
 
 const options = {
   definition: {
@@ -11,7 +13,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3001/api_docentes', 
+        url: 'http://localhost:3002/api', 
         description: "API del sistema de Docentes"
       },
     ],

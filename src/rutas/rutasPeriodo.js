@@ -4,6 +4,16 @@ const controladorPeriodo = require('../controladores/controladorPeriodo');
 const ModeloPeriodo = require('../modelos/periodo'); // Asegúrate de que la ruta sea correcta
 const rutas = Router();
 
+/**
+ * @swagger
+ * /periodos:
+ *   get:
+ *     summary: Muestra un mensaje de bienvenida
+ *     tags: [Periodos]
+ *     responses:
+ *       200:
+ *         description: Mensaje de bienvenida de la API.
+ */
 rutas.get('/', controladorPeriodo.inicio);
 
 rutas.get('/listar', controladorPeriodo.listar);
