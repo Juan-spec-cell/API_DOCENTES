@@ -12,6 +12,7 @@ const options = {
     servers: [
       {
         url: 'http://localhost:3001/api_docentes', 
+        description: "API del sistema de Docentes"
       },
     ],
   },
