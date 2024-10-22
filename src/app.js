@@ -79,16 +79,9 @@ app.set('port', PORT);
 app.use(morgan('dev'));
 app.use(helmet()); // Usar Helmet para proteger la aplicación
 
-// Configuración de CORS
-const corsOptions = {
-    origin: [
-        'http://localhost:3002'
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Permitir estos métodos
-    allowedHeaders: ['Content-Type', 'Authorization'], // Permitir ciertos encabezados
-};
 
-app.use(cors(corsOptions)); // Aplicar CORS con las opciones especificadas
+
+app.use(cors(require('./configuracion/cors'))); // Aplicar CORS con las opciones especificadas
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
@@ -97,8 +90,8 @@ swagger(app);
 
 // Implementar rate limiting
 const limiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minuto
-    max: 10, // Limite de 10 peticiones
+    windowMs: 1000 * 60 * 10,
+    max: 100, // Limite de 10 peticiones
     message: 'Demasiadas peticiones, por favor intente de nuevo más tarde.'
 });
 
