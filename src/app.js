@@ -2,17 +2,21 @@ const express = require('express');
 require('dotenv').config();
 const morgan = require('morgan');
 const db = require('./configuracion/db');
+const swagger = require('./documentacion/swagger'); // Importar Swagger
+const PORT = process.env.PORT || 3002;
+
+// Modelos
 const ModeloCarrera = require('./modelos/carrera');
 const ModeloDocente = require('./modelos/docente');
 const ModeloEstudiante = require('./modelos/estudiante');
 const ModeloAsignatura = require('./modelos/asignatura');
 const ModeloCalificacion = require('./modelos/calificacion');
 const ModeloAsistencia = require('./modelos/asistencia');
-const ModeloPeriodo = require('./modelos/periodo'); 
-const ModeloMatricula = require('./modelos/matricula'); 
-const ModeloActividad = require('./modelos/actividad'); 
-const PORT = process.env.PORT || 3002;
+const ModeloPeriodo = require('./modelos/periodo');
+const ModeloMatricula = require('./modelos/matricula');
+const ModeloActividad = require('./modelos/actividad');
 
+// Conexión a la base de datos
 db.authenticate()
     .then(async () => {
         console.log("Conexión establecida");
@@ -67,21 +71,27 @@ db.authenticate()
         console.error("Error de conexión: ", error);
     });
 
-
 const app = express();
 app.set('port', PORT);
 app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+// Inicializar Swagger
+swagger(app);
+
+// Rutas
 app.use('/api/carreras', require('./rutas/rutasCarrera'));
 app.use('/api/docentes', require('./rutas/rutasDocente'));
-app.use('/api/asignaturas', require('./rutas/rutasAsignatura')); 
-app.use('/api/actividades', require('./rutas/rutasActividad')); 
-app.use('/api/asistencias', require('./rutas/rutasAsistencia')); 
-app.use('/api/calificaciones', require('./rutas/rutasCalificacion')); 
-app.use('/api/estudiantes', require('./rutas/rutasEstudiante')); 
-app.use('/api/matriculas', require('./rutas/rutasMatricula')); 
-app.use('/api/periodos', require('./rutas/rutasPeriodo')); 
+app.use('/api/asignaturas', require('./rutas/rutasAsignatura'));
+app.use('/api/actividades', require('./rutas/rutasActividad'));
+app.use('/api/asistencias', require('./rutas/rutasAsistencia'));
+app.use('/api/calificaciones', require('./rutas/rutasCalificacion'));
+app.use('/api/estudiantes', require('./rutas/rutasEstudiante'));
+app.use('/api/matriculas', require('./rutas/rutasMatricula'));
+app.use('/api/periodos', require('./rutas/rutasPeriodo'));
+
+
 app.listen(app.get('port'), () => {
     console.log('Servidor iniciado en el puerto ' + app.get('port'));
 });

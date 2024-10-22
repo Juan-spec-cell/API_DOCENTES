@@ -4,13 +4,12 @@ const controladorAsignatura = require('../controladores/controladorAsignatura');
 const ModeloAsignatura = require('../modelos/asignatura'); // Asegúrate de la ruta correcta
 const rutas = Router();
 
-// Ruta de inicio
+
 rutas.get('/', controladorAsignatura.inicio);
 
-// Listar asignaturas
 rutas.get('/listar', controladorAsignatura.listar);
 
-// Guardar una nueva asignatura
+
 rutas.post('/guardar',
     body("nombre_asignatura")
         .isLength({ min: 3, max: 100 }).withMessage('El nombre de la asignatura debe tener entre 3 y 100 caracteres')

@@ -4,9 +4,12 @@ const controladorActividad = require('../controladores/controladorActividad');
 const ModeloActividad = require('../modelos/actividad');
 const rutas = Router();
 
+
+
 rutas.get('/', controladorActividad.inicio);
 
 rutas.get('/listar', controladorActividad.listar);
+
 
 rutas.post('/guardar',
     body("id_asignatura")

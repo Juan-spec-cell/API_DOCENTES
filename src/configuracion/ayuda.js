@@ -3,10 +3,12 @@ exports.enviar = (codigo, contenido, res) =>{
     res.setHeader("Content-Type", "application/json");
     res.json(contenido);
 };
-exports.errores = (er)=>{
-    ListaMsj=[];
-    er.errors.forEach(element => {
-        ListaMsj.push({campo: element.path, msj: element.msg});
+
+exports.errores = (er) => {
+    let ListaMsj = [];
+    er.errors.forEach((element) => {
+        ListaMsj.push({ campo: element.path, msj: element.msg });
     });
     return ListaMsj;
 };
+

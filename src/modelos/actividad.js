@@ -1,6 +1,7 @@
 const sequelize = require('sequelize');
 const db = require('../configuracion/db');
 
+
 const Actividad = db.define(
     "actividad",
     {
