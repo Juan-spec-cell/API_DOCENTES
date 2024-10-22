@@ -1,6 +1,9 @@
 const express = require('express');
 require('dotenv').config();
 const morgan = require('morgan');
+const helmet = require('helmet'); // Importar Helmet
+const rateLimit = require('express-rate-limit');
+const cors = require('cors'); // Importar CORS
 const db = require('./configuracion/db');
 const swagger = require('./documentacion/swagger'); // Importar Swagger
 const PORT = process.env.PORT || 3002;
@@ -74,11 +77,33 @@ db.authenticate()
 const app = express();
 app.set('port', PORT);
 app.use(morgan('dev'));
+app.use(helmet()); // Usar Helmet para proteger la aplicación
+
+// Configuración de CORS
+const corsOptions = {
+    origin: [
+        'http://localhost:3002'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Permitir estos métodos
+    allowedHeaders: ['Content-Type', 'Authorization'], // Permitir ciertos encabezados
+};
+
+app.use(cors(corsOptions)); // Aplicar CORS con las opciones especificadas
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // Inicializar Swagger
 swagger(app);
+
+// Implementar rate limiting
+const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minuto
+    max: 10, // Limite de 10 peticiones
+    message: 'Demasiadas peticiones, por favor intente de nuevo más tarde.'
+});
+
+// Aplicar el limitador a todas las rutas
+app.use(limiter);
 
 // Rutas
 app.use('/api/carreras', require('./rutas/rutasCarrera'));
@@ -91,7 +116,7 @@ app.use('/api/estudiantes', require('./rutas/rutasEstudiante'));
 app.use('/api/matriculas', require('./rutas/rutasMatricula'));
 app.use('/api/periodos', require('./rutas/rutasPeriodo'));
 
-
 app.listen(app.get('port'), () => {
     console.log('Servidor iniciado en el puerto ' + app.get('port'));
+    console.log(`Documentación de Swagger disponible en: http://localhost:${app.get('port')}/api-docs`);
 });
