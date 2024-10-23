@@ -4,6 +4,14 @@ const controladorPeriodo = require('../controladores/controladorPeriodo');
 const ModeloPeriodo = require('../modelos/periodo'); 
 const rutas = Router();
 
+
+/**
+ * @swagger
+ * tags:
+ *   name: Periodos
+ *   description: Gestión de periodos
+ */
+
 /**
  * @swagger
  * /periodos:

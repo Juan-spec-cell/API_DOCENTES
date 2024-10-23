@@ -101,7 +101,7 @@ module.exports = rutas;
  * @swagger
  * tags:
  *   name: Asignaturas
- *   description: Operaciones relacionadas con las asignaturas
+ *   description: Gestion de Asignaturas
  */
 
 /**

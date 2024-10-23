@@ -3,7 +3,12 @@ const { body, query } = require('express-validator');
 const controladorCarrera = require('../controladores/controladorCarrera');
 const ModeloCarrera = require('../modelos/carrera');
 const rutas = Router();
-
+/**
+ * @swagger
+ * tags:
+ *   name: Carreras
+ *   description: Gestion de Carreras
+ */
 /**
  * @swagger
  * /carreras:

@@ -4,6 +4,13 @@ const controladorAsistencia = require('../controladores/controladorAsistencia');
 const ModeloAsistencia = require('../modelos/asistencia'); 
 const rutas = Router();
 
+
+/**
+ * @swagger
+ * tags:
+ *   name: Asistencias
+ *   description: Gestion de Asistencias
+ */
 /**
  * @swagger
  * /asistencias:

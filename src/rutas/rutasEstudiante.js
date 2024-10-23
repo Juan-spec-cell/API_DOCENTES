@@ -4,7 +4,12 @@ const controladorEstudiante = require('../controladores/controladorEstudiante');
 const ModeloEstudiante = require('../modelos/estudiante'); // Asegúrate de que la ruta sea correcta
 const rutas = Router();
 
-
+/**
+ * @swagger
+ * tags:
+ *   name: Estudiantes
+ *   description: Gestion de Estudiantes
+ */
 /**
  * @swagger
  * /estudiantes:

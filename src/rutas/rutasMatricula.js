@@ -6,7 +6,12 @@ const ModeloEstudiante = require('../modelos/estudiante'); // Para validar el id
 const ModeloPeriodo = require('../modelos/periodo'); // Para validar el id_periodo
 const rutas = Router();
 
-
+/**
+ * @swagger
+ * tags:
+ *   name: Matriculas
+ *   description: Gestion de Matriculas
+ */
 /**
  * @swagger
  * /matriculas:

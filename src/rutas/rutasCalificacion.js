@@ -97,7 +97,12 @@ rutas.delete('/eliminar',
 );
 
 module.exports = rutas;
-
+/**
+ * @swagger
+ * tags:
+ *   name: Calificaciones
+ *   description: Gestion de Calificaciones
+ */
 /**
  * @swagger
  * /calificaciones:

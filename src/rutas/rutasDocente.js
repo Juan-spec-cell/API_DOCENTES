@@ -3,7 +3,12 @@ const { body, query } = require('express-validator');
 const controladorDocente = require('../controladores/controladorDocente');
 const ModeloDocente = require('../modelos/docente');
 const rutas = Router();
-
+/**
+ * @swagger
+ * tags:
+ *   name: Docentes
+ *   description: Gestion de Docentes
+ */
 /**
  * @swagger
  * /docentes:
