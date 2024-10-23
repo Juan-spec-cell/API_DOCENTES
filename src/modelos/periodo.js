@@ -28,4 +28,9 @@ const Periodo = db.define(
     }
 );
 
+// Definimos las relaciones en este método
+Periodo.relaciones = (models) => {
+    Periodo.hasMany(models.Matricula, { foreignKey: 'id_periodo' });
+};
+
 module.exports = Periodo;

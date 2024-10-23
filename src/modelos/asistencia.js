@@ -40,4 +40,10 @@ const Asistencia = db.define(
     }
 );
 
+// Definimos las relaciones en este método
+Asistencia.relaciones = (models) => {
+    Asistencia.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante' });
+    Asistencia.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura' });
+};
+
 module.exports = Asistencia;

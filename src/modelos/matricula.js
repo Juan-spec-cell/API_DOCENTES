@@ -32,5 +32,10 @@ const Matricula = db.define(
     }
 );
 
-module.exports = Matricula;
+// Definimos las relaciones en este método
+Matricula.relaciones = (models) => {
+    Matricula.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante' });
+    Matricula.belongsTo(models.Periodo, { foreignKey: 'id_periodo' });
+};
 
+module.exports = Matricula;

@@ -40,4 +40,11 @@ const Calificacion = db.define(
     }
 );
 
+// Definimos las relaciones en este método
+Calificacion.relaciones = (models) => {
+    Calificacion.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura' });
+    Calificacion.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante' });
+    Calificacion.belongsTo(models.Actividad, { foreignKey: 'id_asignatura' });
+};
+
 module.exports = Calificacion;

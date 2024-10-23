@@ -24,4 +24,10 @@ const Carrera = db.define(
     }
 );
 
+// Definimos las relaciones en este método
+Carrera.relaciones = (models) => {
+    Carrera.hasMany(models.Estudiante, { foreignKey: 'id_carrera' });
+    Carrera.hasMany(models.Asignatura, { foreignKey: 'id_carrera' });
+};
+
 module.exports = Carrera;

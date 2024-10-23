@@ -25,4 +25,9 @@ const Docente = db.define(
     }
 );
 
+// Definimos las relaciones en este método
+Docente.relaciones = (models) => {
+    Docente.hasMany(models.Asignatura, { foreignKey: 'id_docente' });
+};
+
 module.exports = Docente;

@@ -33,4 +33,11 @@ const Estudiante = db.define(
     }
 );
 
+// Definimos las relaciones en este método
+Estudiante.relaciones = (models) => {
+    Estudiante.belongsTo(models.Carrera, { foreignKey: 'id_carrera' });
+    Estudiante.hasMany(models.Calificacion, { foreignKey: 'id_estudiante' });
+    Estudiante.hasMany(models.Asistencia, { foreignKey: 'id_estudiante' });
+};
+
 module.exports = Estudiante;

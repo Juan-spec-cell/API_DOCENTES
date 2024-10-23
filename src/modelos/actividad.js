@@ -1,6 +1,6 @@
 const sequelize = require('sequelize');
 const db = require('../configuracion/db');
-
+const Asignatura = require('./asignatura'); // Asegúrate de importar los modelos necesarios
 
 const Actividad = db.define(
     "actividad",
@@ -32,5 +32,10 @@ const Actividad = db.define(
         tableName: "actividades"
     }
 );
+
+// Definición de las relaciones
+Actividad.relaciones = () => {
+    Actividad.belongsTo(Asignatura, { foreignKey: 'id_asignatura' });
+};
 
 module.exports = Actividad;
