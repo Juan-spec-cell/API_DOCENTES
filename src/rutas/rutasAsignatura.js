@@ -96,3 +96,119 @@ rutas.delete('/eliminar',
 );
 
 module.exports = rutas;
+
+/**
+ * @swagger
+ * tags:
+ *   name: Asignaturas
+ *   description: Operaciones relacionadas con las asignaturas
+ */
+
+/**
+ * @swagger
+ * /asignaturas:
+ *   get:
+ *     summary: Obtener la página de inicio de asignaturas
+ *     tags: [Asignaturas]
+ *     responses:
+ *       200:
+ *         description: Página de inicio de asignaturas
+ */
+
+/**
+ * @swagger
+ * /asignaturas/listar:
+ *   get:
+ *     summary: Listar todas las asignaturas
+ *     tags: [Asignaturas]
+ *     responses:
+ *       200:
+ *         description: Lista de asignaturas
+ */
+
+/**
+ * @swagger
+ * /asignaturas/guardar:
+ *   post:
+ *     summary: Guardar una nueva asignatura
+ *     tags: [Asignaturas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre_asignatura:
+ *                 type: string
+ *                 example: "Matemáticas"
+ *               id_docente:
+ *                 type: integer
+ *                 example: 1
+ *               id_carrera:
+ *                 type: integer
+ *                 example: 2
+ *     responses:
+ *       201:
+ *         description: Asignatura guardada exitosamente
+ *       400:
+ *         description: Error en los datos de entrada
+ */
+
+/**
+ * @swagger
+ * /asignaturas/editar:
+ *   put:
+ *     summary: Editar una asignatura existente
+ *     tags: [Asignaturas]
+ *     parameters:
+ *       - in: query
+ *         name: id_asignatura
+ *         required: true
+ *         description: ID de la asignatura a editar
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre_asignatura:
+ *                 type: string
+ *                 example: "Matemáticas Avanzadas"
+ *               id_docente:
+ *                 type: integer
+ *                 example: 2
+ *               id_carrera:
+ *                 type: integer
+ *                 example: 3
+ *     responses:
+ *       200:
+ *         description: Asignatura editada exitosamente
+ *       400:
+ *         description: Error en los datos de entrada
+ *       404:
+ *         description: Asignatura no encontrada
+ */
+
+/**
+ * @swagger
+ * /asignaturas/eliminar:
+ *   delete:
+ *     summary: Eliminar una asignatura
+ *     tags: [Asignaturas]
+ *     parameters:
+ *       - in: query
+ *         name: id_asignatura
+ *         required: true
+ *         description: ID de la asignatura a eliminar
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Asignatura eliminada exitosamente
+ *       404:
+ *         description: Asignatura no encontrada
+ */
