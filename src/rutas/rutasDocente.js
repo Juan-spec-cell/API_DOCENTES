@@ -4,10 +4,104 @@ const controladorDocente = require('../controladores/controladorDocente');
 const ModeloDocente = require('../modelos/docente');
 const rutas = Router();
 
+/**
+ * @swagger
+ * /docentes:
+ *   get:
+ *     summary: Muestra un mensaje de bienvenida
+ *     tags: [Docentes]
+ *     responses:
+ *       200:
+ *         description: Mensaje de bienvenida de la API.
+ */
 rutas.get('/', controladorDocente.inicio);
 
+/**
+ * @swagger
+ * /docentes/listar:
+ *   get:
+ *     summary: Lista todos los Docentes
+ *     tags: [Docentes]
+ *     responses:
+ *       200:
+ *         description: Lista de Docentes.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                   description: Tipo de respuesta, donde 0 indica error y 1 indica éxito.
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id_docente:
+ *                         type: integer
+ *                         description: ID del Docente.
+ *                       nombre:
+ *                         type: string
+ *                         description: Nombre del Docente.
+ *                       correo:
+ *                         type: string
+ *                         description: Correo del Docente.
+ *                     
+ *                 msj:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       500:
+ *         description: Error al cargar los datos del Docente.
+ */
 rutas.get('/listar', controladorDocente.listar);
 
+/**
+ * @swagger
+ * /docentes/guardar:
+ *   post:
+ *     summary: Guarda un Nuevo Docente
+ *     tags: [Docentes]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_docente:
+ *                 type: integer
+ *                 description: ID del Docente.
+ *               nombre:
+ *                 type: string
+ *                 description: Nombre del Docente.
+ *               correo:
+ *                 type: string
+ *                 description: Correo del Docente.
+ *     responses:
+ *       200:
+ *         description: Docente guardado correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: object
+ *                   properties:
+ *                     id_docente:
+ *                       type: integer
+ *                       description: ID del Docente.
+ *                 msj:
+ *                   type: string
+ *       400:
+ *         description: Error en la validación de datos.
+ *       500:
+ *         description: Error en el servidor al guardar el Docente.
+ */
 rutas.post('/guardar',
     body("nombre")
         .isLength({ min: 3, max: 100 })
@@ -28,6 +122,45 @@ rutas.post('/guardar',
     controladorDocente.guardar
 );
 
+/**
+ * @swagger
+ * /docentes/editar:
+ *   put:
+ *     summary: Edita un Docente existente
+ *     tags: [Docentes]
+ *     parameters:
+ *       - in: query
+ *         name: id_docente
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del Docente a editar.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *             id_docente:
+ *               type: integer
+ *               description: ID del Docente.
+ *             nombre:
+ *               type: string
+ *               description: Nombre del Docente.
+ *             correo:
+ *               type: string
+ *               description: Correo del Docente.
+ *     responses:
+ *       200:
+ *         description: Docente editado correctamente.
+ *       400:
+ *         description: Error en la validación de datos.
+ *       404:
+ *         description: El ID del Docente no existe.
+ *       500:
+ *         description: Error en el servidor al editar el Docente.
+ */
 rutas.put('/editar',
     query("id_docente")
         .isInt().withMessage("El id del docente debe ser un entero")
@@ -48,6 +181,28 @@ rutas.put('/editar',
         .isEmail().withMessage('Debe ser un correo electrónico válido'),
     controladorDocente.editar
 );
+
+/**
+ * @swagger
+ * /docentes/eliminar:
+ *   delete:
+ *     summary: Elimina un Docente existente
+ *     tags: [Docentes]
+ *     parameters:
+ *       - in: query
+ *         name: id_docente
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del Docente a eliminar.
+ *     responses:
+ *       200:
+ *         description: Docente eliminada correctamente.
+ *       404:
+ *         description: El ID del Docente no existe.
+ *       500:
+ *         description: Error en el servidor al eliminar el Docente.
+ */
 
 rutas.delete('/eliminar',
     query("id_docente")

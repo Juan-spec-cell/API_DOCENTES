@@ -4,10 +4,112 @@ const controladorEstudiante = require('../controladores/controladorEstudiante');
 const ModeloEstudiante = require('../modelos/estudiante'); // Asegúrate de que la ruta sea correcta
 const rutas = Router();
 
+
+/**
+ * @swagger
+ * /estudiantes:
+ *   get:
+ *     summary: Muestra un mensaje de bienvenida
+ *     tags: [Estudiantes]
+ *     responses:
+ *       200:
+ *         description: Mensaje de bienvenida de la API.
+ */
 rutas.get('/', controladorEstudiante.inicio);
+
+/**
+ * @swagger
+ * /estudiantes/listar:
+ *   get:
+ *     summary: Lista todos los Estudiantes
+ *     tags: [Estudiantes]
+ *     responses:
+ *       200:
+ *         description: Lista de Estudiantes.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                   description: Tipo de respuesta, donde 0 indica error y 1 indica éxito.
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id_estudiante:
+ *                         type: integer
+ *                         description: ID del Estudiante.
+ *                       nombre_estudiante:
+ *                         type: string
+ *                         description: Nombre del Estudiante.
+ *                       correo:
+ *                         type: string
+ *                         description: Correo del Estudiante.
+ *                       id_carrera:
+ *                         type: integer
+ *                         description: ID de la Carrera. 
+ *                 msj:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       500:
+ *         description: Error al cargar los datos del Estudiante.
+ */
 
 rutas.get('/listar', controladorEstudiante.listar);
 
+/**
+ * @swagger
+ * /estudiantes/guardar:
+ *   post:
+ *     summary: Guarda un Nuevo Estudiante
+ *     tags: [Estudiantes]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_estudiante:
+ *                 type: integer
+ *                 description: ID del Estudiante.
+ *               nombre_estudiante:
+ *                 type: string
+ *                 description: Nombre del Estudiante.
+ *               correo:
+ *                 type: string
+ *                 description: Correo del Estudiante.
+ *               id_carrera:
+ *                 type: integer
+ *                 description: ID de la Carrera. 
+ *               
+ *     responses:
+ *       200:
+ *         description: Estudiante guardado correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: object
+ *                   properties:
+ *                     id_estudiante:
+ *                       type: integer
+ *                       description: ID del Estudiante.
+ *                 msj:
+ *                   type: string
+ *       400:
+ *         description: Error en la validación de datos.
+ *       500:
+ *         description: Error en el servidor al guardar el Estudiante.
+ */
 rutas.post('/guardar',
     body("nombre_estudiante")
         .isLength({ min: 3, max: 100 }).withMessage('El nombre del estudiante debe tener entre 3 y 100 caracteres')
@@ -39,6 +141,48 @@ rutas.post('/guardar',
     controladorEstudiante.guardar
 );
 
+/**
+ * @swagger
+ * /estudiantes/editar:
+ *   put:
+ *     summary: Edita un Estudiante existente
+ *     tags: [Estudiantes]
+ *     parameters:
+ *       - in: query
+ *         name: id_estudiante
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del estudiante a editar.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              id_estudiante:
+ *                type: integer
+ *                description: ID del Estudiante.
+ *              nombre_estudiante:
+ *                type: string
+ *                description: Nombre del Estudiante.
+ *              correo:
+ *                type: string
+ *                description: Correo del Estudiante.
+ *              id_carrera:
+ *                type: integer
+ *                description: ID de la Carrera. 
+ *     responses:
+ *       200:
+ *         description: Estudiante editado correctamente.
+ *       400:
+ *         description: Error en la validación de datos.
+ *       404:
+ *         description: El ID del Estudiante no existe.
+ *       500:
+ *         description: Error en el servidor al editar el Estudiante.
+ */
 rutas.put('/editar',
     query("id_estudiante")
         .isInt().withMessage("El id del estudiante debe ser un entero")
@@ -74,6 +218,27 @@ rutas.put('/editar',
     controladorEstudiante.editar
 );
 
+/**
+ * @swagger
+ * /estudiantes/eliminar:
+ *   delete:
+ *     summary: Elimina un estudiante existente
+ *     tags: [Estudiantes]
+ *     parameters:
+ *       - in: query
+ *         name: id_estudiante
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del Estudiante a eliminar.
+ *     responses:
+ *       200:
+ *         description: Estudiante eliminada correctamente.
+ *       404:
+ *         description: El ID del Estudiante no existe.
+ *       500:
+ *         description: Error en el servidor al eliminar el Estudiante.
+ */
 rutas.delete('/eliminar',
     query("id_estudiante")
         .isInt().withMessage("El id del estudiante debe ser un entero")
