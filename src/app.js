@@ -7,7 +7,7 @@ const cors = require('cors');
 const db = require('./configuracion/db');
 const swagger = require('./documentacion/swagger');
 const sincronizarModelos = require('./configuracion/sincronizar_modelos');
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3002;
 
 const app = express();
 app.set('port', PORT);
@@ -55,4 +55,3 @@ db.authenticate()
         console.error("Error de conexión: ", error);
     });
 
-module.exports = app;
