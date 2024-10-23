@@ -7,8 +7,7 @@ const cors = require('cors');
 const db = require('./configuracion/db');
 const swagger = require('./documentacion/swagger');
 const sincronizarModelos = require('./configuracion/sincronizar_modelos');
-const passport = require('passport'); // Importa Passport
-require('./configuracion/autenticacion'); // Configura Passport
+const passport = require('passport');
 const PORT = process.env.PORT || 3002;
 
 const app = express();
@@ -17,10 +16,10 @@ app.set('port', PORT);
 // Middleware
 app.use(morgan('dev'));
 app.use(helmet());
-app.use(cors(require('./configuracion/cors')));
+app.use(cors(require('./configuracion/cors'))); 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(passport.initialize()); // Inicializa Passport
+app.use(passport.initialize()); 
 
 // Inicializar Swagger
 swagger(app);
@@ -43,7 +42,7 @@ app.use('/api/calificaciones', require('./rutas/rutasCalificacion'));
 app.use('/api/estudiantes', require('./rutas/rutasEstudiante'));
 app.use('/api/matriculas', require('./rutas/rutasMatricula'));
 app.use('/api/periodos', require('./rutas/rutasPeriodo'));
-app.use('/api/usuarios', require('./rutas/rutasUsuario')); // Añade las rutas de usuarios
+
 
 // Conexión a la base de datos y sincronización de modelos
 db.authenticate()

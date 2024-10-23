@@ -7,7 +7,6 @@ const ModeloAsistencia = require('../modelos/asistencia');
 const ModeloPeriodo = require('../modelos/periodo');
 const ModeloMatricula = require('../modelos/matricula');
 const ModeloActividad = require('../modelos/actividad');
-const ModeloUsuario = require('../modelos/usuario'); // Importa el modelo de Usuario
 
 async function sincronizarModelos() {
     // Definición de relaciones entre los modelos
@@ -21,7 +20,6 @@ async function sincronizarModelos() {
         Periodo: ModeloPeriodo,
         Matricula: ModeloMatricula,
         Actividad: ModeloActividad,
-        Usuario: ModeloUsuario, // Añade el modelo de Usuario
     };
 
     // Establecer las relaciones llamando al método en cada modelo
@@ -31,7 +29,7 @@ async function sincronizarModelos() {
         }
     });
 
-    // Sincronización de los modelos
+
     try {
         await Promise.all(Object.values(modelos).map(modelo => modelo.sync()));
         console.log("Todos los modelos fueron creados correctamente");
