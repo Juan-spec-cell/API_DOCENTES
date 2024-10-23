@@ -6,8 +6,8 @@ const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const db = require('./configuracion/db');
 const swagger = require('./documentacion/swagger');
-const sincronizarModelos = require('./configuracion/sincronizar_modelos'); // Importar la sincronización de modelos
-const PORT = process.env.PORT || 3002;
+const sincronizarModelos = require('./configuracion/sincronizar_modelos');
+const PORT = process.env.PORT;
 
 const app = express();
 app.set('port', PORT);
@@ -23,12 +23,12 @@ app.use(express.json());
 swagger(app);
 
 // Implementar rate limiting
-const limiter = rateLimit({
-    windowMs: 1000 * 60 * 10,
+const limitador = rateLimit({
+    windowMs: 1000 * 60 * 10, // cada 10 minutos
     max: 100, 
     message: 'Demasiadas peticiones, por favor intente de nuevo más tarde.'
 });
-app.use(limiter);
+app.use(limitador);
 
 // Rutas
 app.use('/api/carreras', require('./rutas/rutasCarrera'));
@@ -54,3 +54,5 @@ db.authenticate()
     .catch((error) => {
         console.error("Error de conexión: ", error);
     });
+
+module.exports = app;

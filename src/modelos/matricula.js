@@ -1,5 +1,5 @@
-const sequelize = require('sequelize');
-const db = require('../configuracion/db');
+const sequelize = require('sequelize');  // Importa Sequelize
+const db = require('../configuracion/db'); // Importa la configuración de la base de datos
 
 const Matricula = db.define(
     "matricula",
@@ -32,7 +32,7 @@ const Matricula = db.define(
     }
 );
 
-// Definimos las relaciones en este método
+// Definir las relaciones
 Matricula.relaciones = (models) => {
     Matricula.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante' });
     Matricula.belongsTo(models.Periodo, { foreignKey: 'id_periodo' });

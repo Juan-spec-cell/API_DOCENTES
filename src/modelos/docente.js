@@ -7,7 +7,7 @@ const Docente = db.define(
         id_docente: {
             type: sequelize.INTEGER,
             primaryKey: true,
-            autoIncrement: true,
+            autoIncrement: true, // Solo un campo debe tener autoIncrement
             allowNull: false,
         },
         nombre: {
@@ -25,7 +25,7 @@ const Docente = db.define(
     }
 );
 
-// Definimos las relaciones en este método
+// Definir las relaciones
 Docente.relaciones = (models) => {
     Docente.hasMany(models.Asignatura, { foreignKey: 'id_docente' });
 };
