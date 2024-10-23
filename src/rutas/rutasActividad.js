@@ -13,7 +13,7 @@ const rutas = Router();
 
 /**
  * @swagger
- * /:
+ * /actividades:
  *   get:
  *     summary: Inicializa el controlador de actividades
  *     tags: [Actividades]
@@ -25,7 +25,7 @@ rutas.get('/', controladorActividad.inicio);
 
 /**
  * @swagger
- * /listar:
+ * /actividades/listar:
  *   get:
  *     summary: Lista todas las actividades
  *     tags: [Actividades]
@@ -37,7 +37,7 @@ rutas.get('/listar', controladorActividad.listar);
 
 /**
  * @swagger
- * /guardar:
+ * /actividades/guardar:
  *   post:
  *     summary: Guarda una nueva actividad
  *     tags: [Actividades]
@@ -83,7 +83,7 @@ rutas.post('/guardar',
 
 /**
  * @swagger
- * /editar:
+ * /actividades/editar:
  *   put:
  *     summary: Edita una actividad existente
  *     tags: [Actividades]
@@ -153,7 +153,7 @@ rutas.put('/editar',
 
 /**
  * @swagger
- * /eliminar:
+ * /actividades/eliminar:
  *   delete:
  *     summary: Elimina una actividad
  *     tags: [Actividades]
