@@ -139,6 +139,9 @@ module.exports = rutas;
  *           schema:
  *             type: object
  *             properties:
+ *               id_asignatura:
+ *                 type: integer
+ *                 description: ID de la Asignatura
  *               nombre_asignatura:
  *                 type: string
  *                 example: "Matemáticas"
@@ -149,7 +152,7 @@ module.exports = rutas;
  *                 type: integer
  *                 example: 2
  *     responses:
- *       201:
+ *       200:
  *         description: Asignatura guardada exitosamente
  *       400:
  *         description: Error en los datos de entrada
@@ -175,6 +178,9 @@ module.exports = rutas;
  *           schema:
  *             type: object
  *             properties:
+ *               id_asignatura:
+ *                 type: integer
+ *                 description: ID de la Asignatura
  *               nombre_asignatura:
  *                 type: string
  *                 example: "Matemáticas Avanzadas"
