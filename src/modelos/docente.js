@@ -1,23 +1,32 @@
-const sequelize = require('sequelize');
+const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
+const Usuario = require('./usuario');
 
 const Docente = db.define(
     "docente",
     {
         id_docente: {
-            type: sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             primaryKey: true,
-            autoIncrement: true, // Solo un campo debe tener autoIncrement
+            autoIncrement: true,
             allowNull: false,
         },
         nombre: {
-            type: sequelize.STRING(100),
+            type: DataTypes.STRING(100),
             allowNull: false,
         },
-        correo: {
-            type: sequelize.STRING(100),
+        email: {  // Cambiando "correo" a "email"
+            type: DataTypes.STRING(100),
             allowNull: false,
             unique: true,
+        },
+        usuarioId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: Usuario,
+                key: 'id'
+            }
         }
     },
     {
@@ -28,6 +37,8 @@ const Docente = db.define(
 // Definir las relaciones
 Docente.relaciones = (models) => {
     Docente.hasMany(models.Asignatura, { foreignKey: 'id_docente' });
+    Docente.belongsTo(Usuario, { foreignKey: 'usuarioId', unique: true });
+    Usuario.hasOne(Docente, { foreignKey: 'usuarioId' });
 };
 
 module.exports = Docente;
