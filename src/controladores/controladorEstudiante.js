@@ -95,3 +95,69 @@ exports.eliminar = async (req, res) => {
         enviar(500, contenido, res);
     }
 };
+
+//filtros en general
+exports.busqueda = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const whereClause = {};
+        if (req.query.id) whereClause.id_estudiante = req.query.id;
+        if (req.query.nombre) whereClause.nombre_estudiante = req.query.nombre;
+        if (req.query.correo) whereClause.correo = req.query.correo;
+        if (req.query.id) whereClause.id_carrera = req.query.id;
+    
+        const busqueda = await ModeloEstudiante.findAll({
+          where: { [Op.or]: whereClause },
+        });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
+
+//filtro para buscar por id de Estudiante
+exports.busqueda_id = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const busqueda = await ModeloEstudiante.findOne({ where: { id_estudiante: req.query.id } });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
+
+  //filtro para buscar por nombre del estudiante
+exports.busqueda_nombre = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const busqueda = await ModeloEstudiante.findOne({ where: { nombre_estudiante: req.query.nombre } });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
+  

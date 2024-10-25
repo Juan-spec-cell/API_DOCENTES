@@ -95,3 +95,69 @@ exports.eliminar = async (req, res) => {
         enviar(500, contenido, res);
     }
 };
+
+//filtros en general
+exports.busqueda = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const whereClause = {};
+        if (req.query.id) whereClause.id_periodo = req.query.id;
+        if (req.query.nombre) whereClause.nombre_periodo = req.query.nombre;
+        if (req.query.fecha) whereClause.fecha_inicio = req.query.fecha;
+        if (req.query.fecha) whereClause.fecha_fin = req.query.fecha;
+       
+    
+        const busqueda = await ModeloPeriodo.findAll({
+          where: { [Op.or]: whereClause },
+        });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
+
+  //filtro para buscar por id de Periodo
+exports.busqueda_id = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const busqueda = await ModeloPeriodo.findOne({ where: { id_periodo: req.query.id } });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
+
+  //filtro para buscar por nombre de Periodo
+exports.busqueda_nombre = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const busqueda = await ModeloPeriodo.findOne({ where: { nombre_periodo: req.query.nombre } });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
