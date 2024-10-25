@@ -95,3 +95,69 @@ exports.eliminar = async (req, res) => {
         enviar(500, contenido, res);
     }
 };
+
+//filtros en general
+exports.busqueda = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const whereClause = {};
+        if (req.query.id) whereClause.id_asistencia = req.query.id;
+        if (req.query.id) whereClause.id_estudiante = req.query.id;
+        if (req.query.id) whereClause.id_asignatura = req.query.id;
+        if (req.query.fecha) whereClause.fecha = req.query.fecha;
+        if (req.query.estado) whereClause.estado = req.query.estado;
+
+        const busqueda = await ModeloAsistencia.findAll({
+          where: { [Op.or]: whereClause },
+        });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
+
+  //filtro para buscar por id de asistencia
+exports.busqueda_id = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const busqueda = await ModeloAsistencia.findOne({ where: { id_asistencia: req.query.id } });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
+
+  //filtro para buscar por fecha de asignatura
+exports.busqueda_fecha = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const busqueda = await ModeloAsistencia.findOne({ where: { fecha: req.query.fecha } });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };

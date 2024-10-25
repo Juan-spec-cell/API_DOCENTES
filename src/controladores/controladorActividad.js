@@ -95,3 +95,90 @@ exports.eliminar = async (req, res) => {
         enviar(500, contenido, res);
     }
 };
+
+//filtros
+exports.busqueda = async (req, res) => {
+  const validacion = validationResult(req);
+  if (validacion.errors.length > 0) {
+    var msjerror = "";
+    validacion.errors.forEach((r) => {
+      msjerror = msjerror + r.msg + ". ";
+    });
+    res.json({ msj: "Hay errores en la petición", error: msjerror });
+  } else {
+    try {
+      const whereClause = {};
+      if (req.query.id) whereClause.id_actividad = req.query.id;
+      if (req.query.id) whereClause.id_asignatura = req.query.id;
+      if (req.query.tipo) whereClause.tipo_actividad = req.query.tipo;
+      if (req.query.fecha) whereClause.fecha = req.query.fecha;
+      
+      const busqueda = await ModeloActividad.findAll({
+        where: { [Op.or]: whereClause },
+      });
+      res.json(busqueda);
+    } catch (error) {
+      res.json(error);
+    }
+  }
+};
+//filtro para buscar por id
+exports.busqueda_id = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const busqueda = await ModeloActividad.findOne({ where: { id_actividad: req.query.id } });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
+ 
+  //filtros para buscar por tipo de actividad
+  exports.busqueda_tipo = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const busqueda = await ModeloActividad.findAll({
+          where: { tipo_actividad: req.query.tipo },
+        });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
+
+  //filtro de busqueda por fecha
+  exports.busqueda_fecha = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+      var msjerror = "";
+      validacion.errors.forEach((r) => {
+        msjerror = msjerror + r.msg + ". ";
+      });
+      res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+      try {
+        const busqueda = await ModeloActividad.findAll({
+          where: { fecha: req.query.fecha },
+        });
+        res.json(busqueda);
+      } catch (error) {
+        res.json(error);
+      }
+    }
+  };
