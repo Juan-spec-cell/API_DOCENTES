@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
-const Usuario = require('./usuario');
+
 
 const Docente = db.define(
     "docente",
@@ -20,14 +20,6 @@ const Docente = db.define(
             allowNull: false,
             unique: true,
         },
-        usuarioId: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-                model: Usuario,
-                key: 'id'
-            }
-        }
     },
     {
         tableName: "docentes"
@@ -37,8 +29,6 @@ const Docente = db.define(
 // Definir las relaciones
 Docente.relaciones = (models) => {
     Docente.hasMany(models.Asignatura, { foreignKey: 'id_docente' });
-    Docente.belongsTo(Usuario, { foreignKey: 'usuarioId', unique: true });
-    Usuario.hasOne(Docente, { foreignKey: 'usuarioId' });
 };
 
 module.exports = Docente;

@@ -144,13 +144,10 @@ module.exports = rutas;
  *                 description: ID de la Asignatura
  *               nombre_asignatura:
  *                 type: string
- *                 example: "Matemáticas"
  *               id_docente:
  *                 type: integer
- *                 example: 1
  *               id_carrera:
  *                 type: integer
- *                 example: 2
  *     responses:
  *       200:
  *         description: Asignatura guardada exitosamente
@@ -186,10 +183,8 @@ module.exports = rutas;
  *                 example: "Matemáticas Avanzadas"
  *               id_docente:
  *                 type: integer
- *                 example: 2
  *               id_carrera:
  *                 type: integer
- *                 example: 3
  *     responses:
  *       200:
  *         description: Asignatura editada exitosamente

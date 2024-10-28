@@ -1,23 +1,25 @@
-const { Router } = require('express');
+const express = require('express');
 const { body, query } = require('express-validator');
 const controladorDocente = require('../controladores/controladorDocente');
 const ModeloDocente = require('../modelos/docente');
-const rutas = Router();
+const rutas = express.Router();
+
 /**
  * @swagger
  * tags:
  *   name: Docentes
- *   description: Gestion de Docentes
+ *   description: Gestión de docentes
  */
+
 /**
  * @swagger
  * /docentes:
  *   get:
- *     summary: Muestra un mensaje de bienvenida
+ *     summary: Inicializa el controlador de docentes
  *     tags: [Docentes]
  *     responses:
  *       200:
- *         description: Mensaje de bienvenida de la API.
+ *         description: Controlador inicializado
  */
 rutas.get('/', controladorDocente.inicio);
 
@@ -25,40 +27,11 @@ rutas.get('/', controladorDocente.inicio);
  * @swagger
  * /docentes/listar:
  *   get:
- *     summary: Lista todos los Docentes
+ *     summary: Lista todos los docentes
  *     tags: [Docentes]
  *     responses:
  *       200:
- *         description: Lista de Docentes.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tipo:
- *                   type: integer
- *                   description: Tipo de respuesta, donde 0 indica error y 1 indica éxito.
- *                 datos:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id_docente:
- *                         type: integer
- *                         description: ID del Docente.
- *                       nombre:
- *                         type: string
- *                         description: Nombre del Docente.
- *                       correo:
- *                         type: string
- *                         description: Correo del Docente.
- *                     
- *                 msj:
- *                   type: array
- *                   items:
- *                     type: string
- *       500:
- *         description: Error al cargar los datos del Docente.
+ *         description: Lista de docentes
  */
 rutas.get('/listar', controladorDocente.listar);
 
@@ -66,7 +39,7 @@ rutas.get('/listar', controladorDocente.listar);
  * @swagger
  * /docentes/guardar:
  *   post:
- *     summary: Guarda un Nuevo Docente
+ *     summary: Guarda un nuevo Docente
  *     tags: [Docentes]
  *     requestBody:
  *       required: true
@@ -77,49 +50,28 @@ rutas.get('/listar', controladorDocente.listar);
  *             properties:
  *               id_docente:
  *                 type: integer
- *                 description: ID del Docente.
+ *                 description: ID del docente
  *               nombre:
  *                 type: string
- *                 description: Nombre del Docente.
- *               correo:
+ *                 description: Nombre del docente
+ *               email:
  *                 type: string
- *                 description: Correo del Docente.
+ *                 description: Correo electrónico del docente
  *     responses:
  *       200:
- *         description: Docente guardado correctamente.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tipo:
- *                   type: integer
- *                 datos:
- *                   type: object
- *                   properties:
- *                     id_docente:
- *                       type: integer
- *                       description: ID del Docente.
- *                 msj:
- *                   type: string
+ *         description: Docente guardado
  *       400:
- *         description: Error en la validación de datos.
- *       500:
- *         description: Error en el servidor al guardar el Docente.
+ *         description: Error en los datos proporcionados
  */
 rutas.post('/guardar',
+    body("id_docente").isInt().withMessage('El id del docente debe ser un entero'),
     body("nombre")
-        .isLength({ min: 3, max: 100 })
-        .withMessage('El nombre debe tener entre 3 y 100 caracteres')
-        .custom(async value => {
-            if (!value) {
-                throw new Error('El nombre no permite valores nulos');
-            }
-        }),
-    body("correo")
+        .isString().withMessage('El nombre debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre no permite valores nulos'),
+    body("email")
         .isEmail().withMessage('Debe ser un correo electrónico válido')
         .custom(async value => {
-            const buscarDocente = await ModeloDocente.findOne({ where: { correo: value } });
+            const buscarDocente = await ModeloDocente.findOne({ where: { email: value } });
             if (buscarDocente) {
                 throw new Error('El correo ya está registrado');
             }
@@ -139,7 +91,7 @@ rutas.post('/guardar',
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del Docente a editar.
+ *           description: ID del docente a editar
  *     requestBody:
  *       required: true
  *       content:
@@ -147,43 +99,33 @@ rutas.post('/guardar',
  *           schema:
  *             type: object
  *             properties:
- *             id_docente:
- *               type: integer
- *               description: ID del Docente.
- *             nombre:
- *               type: string
- *               description: Nombre del Docente.
- *             correo:
- *               type: string
- *               description: Correo del Docente.
+ *               nombre:
+ *                 type: string
+ *                 description: Nombre del docente
+ *               email:
+ *                 type: string
+ *                 description: Correo electrónico del docente
  *     responses:
  *       200:
- *         description: Docente editado correctamente.
+ *         description: Docente editado
  *       400:
- *         description: Error en la validación de datos.
- *       404:
- *         description: El ID del Docente no existe.
- *       500:
- *         description: Error en el servidor al editar el Docente.
+ *         description: Error en los datos proporcionados
  */
 rutas.put('/editar',
-    query("id_docente")
-        .isInt().withMessage("El id del docente debe ser un entero")
+    query("id_docente").isInt().withMessage('El id del docente debe ser un entero'),
+    body("nombre")
+        .optional()
+        .isString().withMessage('El nombre debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre no permite valores nulos'),
+    body("email")
+        .optional()
+        .isEmail().withMessage('Debe ser un correo electrónico válido')
         .custom(async value => {
-            if (!value) {
-                throw new Error('El id no permite valores nulos');
-            } else {
-                const buscarDocente = await ModeloDocente.findOne({ where: { id_docente: value } });
-                if (!buscarDocente) {
-                    throw new Error('El id del docente no existe');
-                }
+            const buscarDocente = await ModeloDocente.findOne({ where: { email: value } });
+            if (buscarDocente) {
+                throw new Error('El correo ya está registrado');
             }
         }),
-    body("nombre")
-        .isLength({ min: 3, max: 100 })
-        .withMessage('El nombre debe tener entre 3 y 100 caracteres'),
-    body("correo")
-        .isEmail().withMessage('Debe ser un correo electrónico válido'),
     controladorDocente.editar
 );
 
@@ -191,7 +133,7 @@ rutas.put('/editar',
  * @swagger
  * /docentes/eliminar:
  *   delete:
- *     summary: Elimina un Docente existente
+ *     summary: Elimina un Docente
  *     tags: [Docentes]
  *     parameters:
  *       - in: query
@@ -199,29 +141,15 @@ rutas.put('/editar',
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del Docente a eliminar.
+ *           description: ID del docente a eliminar
  *     responses:
  *       200:
- *         description: Docente eliminada correctamente.
- *       404:
- *         description: El ID del Docente no existe.
- *       500:
- *         description: Error en el servidor al eliminar el Docente.
+ *         description: Docente eliminado
+ *       400:
+ *         description: Error en los datos proporcionados
  */
-
 rutas.delete('/eliminar',
-    query("id_docente")
-        .isInt().withMessage("El id del docente debe ser un entero")
-        .custom(async value => {
-            if (!value) {
-                throw new Error('El id no permite valores nulos');
-            } else {
-                const buscarDocente = await ModeloDocente.findOne({ where: { id_docente: value } });
-                if (!buscarDocente) {
-                    throw new Error('El id del docente no existe');
-                }
-            }
-        }),
+    query("id_docente").isInt().withMessage('El id del docente debe ser un entero'),
     controladorDocente.eliminar
 );
 

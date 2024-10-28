@@ -25,26 +25,17 @@ exports.listar = async (req, res) => {
 };
 
 exports.guardar = async (req, res) => {
-    const { nombre, correo } = req.body;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    contenido.msj = errores(validationResult(req));
-    if (contenido.msj.length > 0) {
-        return enviar(200, contenido, res);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ tipo: 0, datos: [], msj: errors.array() });
     }
+
     try {
-        const data = await ModeloDocente.create({ nombre, correo });
-        contenido.tipo = 1;
-        contenido.datos = data;
-        contenido.msj = "Docente guardado correctamente";
-        enviar(200, contenido, res);
+        const nuevoDocente = await ModeloDocente.create(req.body);
+        res.status(200).json({ tipo: 1, datos: nuevoDocente, msj: 'Docente guardado con éxito' });
     } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al guardar el docente";
-        enviar(500, contenido, res);
+        console.error('Error al guardar el docente:', error); // Log the error for debugging
+        res.status(500).json({ tipo: 0, datos: [], msj: 'Error en el servidor al guardar el docente' });
     }
 };
 
@@ -95,67 +86,3 @@ exports.eliminar = async (req, res) => {
         enviar(500, contenido, res);
     }
 };
-
-//filtros en general
-exports.busqueda = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-      var msjerror = "";
-      validacion.errors.forEach((r) => {
-        msjerror = msjerror + r.msg + ". ";
-      });
-      res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-      try {
-        const whereClause = {};
-        if (req.query.id) whereClause.id_docente = req.query.id;
-        if (req.query.nombre) whereClause.nombre = req.query.nombre;
-        if (req.query.correo) whereClause.correo = req.query.correo;
-    
-        const busqueda = await ModeloDocente.findAll({
-          where: { [Op.or]: whereClause },
-        });
-        res.json(busqueda);
-      } catch (error) {
-        res.json(error);
-      }
-    }
-  };
-
-   //filtro para buscar por id de Docente
-exports.busqueda_id = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-      var msjerror = "";
-      validacion.errors.forEach((r) => {
-        msjerror = msjerror + r.msg + ". ";
-      });
-      res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-      try {
-        const busqueda = await ModeloDocente.findOne({ where: { id_docente: req.query.id } });
-        res.json(busqueda);
-      } catch (error) {
-        res.json(error);
-      }
-    }
-  };
-
-   //filtro para buscar por nombre de Docente
-exports.busqueda_nombre = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-      var msjerror = "";
-      validacion.errors.forEach((r) => {
-        msjerror = msjerror + r.msg + ". ";
-      });
-      res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-      try {
-        const busqueda = await ModeloDocente.findOne({ where: { nombre: req.query.nombre } });
-        res.json(busqueda);
-      } catch (error) {
-        res.json(error);
-      }
-    }
-  };

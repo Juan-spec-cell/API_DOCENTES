@@ -60,7 +60,7 @@ rutas.get('/', controladorAsistencia.inicio);
  *                         description: Fecha de la asistencia.
  *                       estado:
  *                         type: string
- *                         enum: [Presente, Ausente, Tardanza]
+ *                         enum: Presente, Ausente, Tardanza
  *                         description: Estado de la asistencia.
  *                 msj:
  *                   type: array

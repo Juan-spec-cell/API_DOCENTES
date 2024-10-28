@@ -1,24 +1,25 @@
-const { Router } = require('express');
+const express = require('express');
 const { body, query } = require('express-validator');
 const controladorEstudiante = require('../controladores/controladorEstudiante');
-const ModeloEstudiante = require('../modelos/estudiante'); // Asegúrate de que la ruta sea correcta
-const rutas = Router();
+const ModeloEstudiante = require('../modelos/estudiante');
+const rutas = express.Router();
 
 /**
  * @swagger
  * tags:
  *   name: Estudiantes
- *   description: Gestion de Estudiantes
+ *   description: Gestión de estudiantes
  */
+
 /**
  * @swagger
  * /estudiantes:
  *   get:
- *     summary: Muestra un mensaje de bienvenida
+ *     summary: Inicializa el controlador de estudiantes
  *     tags: [Estudiantes]
  *     responses:
  *       200:
- *         description: Mensaje de bienvenida de la API.
+ *         description: Controlador inicializado
  */
 rutas.get('/', controladorEstudiante.inicio);
 
@@ -26,51 +27,19 @@ rutas.get('/', controladorEstudiante.inicio);
  * @swagger
  * /estudiantes/listar:
  *   get:
- *     summary: Lista todos los Estudiantes
+ *     summary: Lista todos los estudiantes
  *     tags: [Estudiantes]
  *     responses:
  *       200:
- *         description: Lista de Estudiantes.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tipo:
- *                   type: integer
- *                   description: Tipo de respuesta, donde 0 indica error y 1 indica éxito.
- *                 datos:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id_estudiante:
- *                         type: integer
- *                         description: ID del Estudiante.
- *                       nombre_estudiante:
- *                         type: string
- *                         description: Nombre del Estudiante.
- *                       correo:
- *                         type: string
- *                         description: Correo del Estudiante.
- *                       id_carrera:
- *                         type: integer
- *                         description: ID de la Carrera. 
- *                 msj:
- *                   type: array
- *                   items:
- *                     type: string
- *       500:
- *         description: Error al cargar los datos del Estudiante.
+ *         description: Lista de estudiantes
  */
-
 rutas.get('/listar', controladorEstudiante.listar);
 
 /**
  * @swagger
  * /estudiantes/guardar:
  *   post:
- *     summary: Guarda un Nuevo Estudiante
+ *     summary: Guarda un nuevo Estudiante
  *     tags: [Estudiantes]
  *     requestBody:
  *       required: true
@@ -81,68 +50,36 @@ rutas.get('/listar', controladorEstudiante.listar);
  *             properties:
  *               id_estudiante:
  *                 type: integer
- *                 description: ID del Estudiante.
+ *                 description: ID del Estudiante
  *               nombre_estudiante:
  *                 type: string
- *                 description: Nombre del Estudiante.
- *               correo:
+ *                 description: Nombre del Estudiante
+ *               email:
  *                 type: string
- *                 description: Correo del Estudiante.
+ *                 description: Correo del Estudiante
  *               id_carrera:
  *                 type: integer
- *                 description: ID de la Carrera. 
- *               
+ *                 description: ID de la Carrera
  *     responses:
  *       200:
- *         description: Estudiante guardado correctamente.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tipo:
- *                   type: integer
- *                 datos:
- *                   type: object
- *                   properties:
- *                     id_estudiante:
- *                       type: integer
- *                       description: ID del Estudiante.
- *                 msj:
- *                   type: string
+ *         description: Estudiante guardado
  *       400:
- *         description: Error en la validación de datos.
- *       500:
- *         description: Error en el servidor al guardar el Estudiante.
+ *         description: Error en los datos proporcionados
  */
 rutas.post('/guardar',
+    body("id_estudiante").isInt().withMessage('El id del estudiante debe ser un entero'),
     body("nombre_estudiante")
-        .isLength({ min: 3, max: 100 }).withMessage('El nombre del estudiante debe tener entre 3 y 100 caracteres')
+        .isString().withMessage('El nombre debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre no permite valores nulos'),
+    body("email")
+        .isEmail().withMessage('Debe ser un correo electrónico válido')
         .custom(async value => {
-            if (!value) {
-                throw new Error('El nombre no permite valores nulos');
-            }
-            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { nombre_estudiante: value } });
+            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { email: value } });
             if (buscarEstudiante) {
-                throw new Error('El nombre del estudiante ya existe');
+                throw new Error('El correo ya está registrado');
             }
         }),
-    body("correo")
-        .isEmail().withMessage('El correo debe ser un email válido')
-        .custom(async value => {
-            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { correo: value } });
-            if (buscarEstudiante) {
-                throw new Error('El correo ya está en uso');
-            }
-        }),
-    body("id_carrera")
-        .isInt().withMessage('El id de la carrera debe ser un entero')
-        .custom(async value => {
-            const carreraExistente = await ModeloEstudiante.sequelize.models.carrera.findOne({ where: { id_carrera: value } });
-            if (!carreraExistente) {
-                throw new Error('El id de la carrera no existe');
-            }
-        }),
+    body("id_carrera").isInt().withMessage('El id de la carrera debe ser un entero'),
     controladorEstudiante.guardar
 );
 
@@ -158,7 +95,7 @@ rutas.post('/guardar',
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del estudiante a editar.
+ *           description: ID del estudiante a editar
  *     requestBody:
  *       required: true
  *       content:
@@ -166,60 +103,37 @@ rutas.post('/guardar',
  *           schema:
  *             type: object
  *             properties:
- *              id_estudiante:
- *                type: integer
- *                description: ID del Estudiante.
- *              nombre_estudiante:
- *                type: string
- *                description: Nombre del Estudiante.
- *              correo:
- *                type: string
- *                description: Correo del Estudiante.
- *              id_carrera:
- *                type: integer
- *                description: ID de la Carrera. 
+ *               nombre_estudiante:
+ *                 type: string
+ *                 description: Nombre del Estudiante
+ *               email:
+ *                 type: string
+ *                 description: Correo del Estudiante
+ *               id_carrera:
+ *                 type: integer
+ *                 description: ID de la Carrera
  *     responses:
  *       200:
- *         description: Estudiante editado correctamente.
+ *         description: Estudiante editado
  *       400:
- *         description: Error en la validación de datos.
- *       404:
- *         description: El ID del Estudiante no existe.
- *       500:
- *         description: Error en el servidor al editar el Estudiante.
+ *         description: Error en los datos proporcionados
  */
 rutas.put('/editar',
-    query("id_estudiante")
-        .isInt().withMessage("El id del estudiante debe ser un entero")
-        .custom(async value => {
-            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id_estudiante: value } });
-            if (!buscarEstudiante) {
-                throw new Error('El id del estudiante no existe');
-            }
-        }),
+    query("id_estudiante").isInt().withMessage('El id del estudiante debe ser un entero'),
     body("nombre_estudiante")
         .optional()
-        .isLength({ min: 3, max: 100 }).withMessage('El nombre del estudiante debe tener entre 3 y 100 caracteres'),
-    body("correo")
+        .isString().withMessage('El nombre debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre no permite valores nulos'),
+    body("email")
         .optional()
-        .isEmail().withMessage('El correo debe ser un email válido')
+        .isEmail().withMessage('Debe ser un correo electrónico válido')
         .custom(async value => {
-            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { correo: value } });
+            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { email: value } });
             if (buscarEstudiante) {
-                throw new Error('El correo ya está en uso');
+                throw new Error('El correo ya está registrado');
             }
         }),
-    body("id_carrera")
-        .optional()
-        .isInt().withMessage('El id de la carrera debe ser un entero')
-        .custom(async value => {
-            if (value) {
-                const carreraExistente = await ModeloEstudiante.sequelize.models.carrera.findOne({ where: { id_carrera: value } });
-                if (!carreraExistente) {
-                    throw new Error('El id de la carrera no existe');
-                }
-            }
-        }),
+    body("id_carrera").optional().isInt().withMessage('El id de la carrera debe ser un entero'),
     controladorEstudiante.editar
 );
 
@@ -227,7 +141,7 @@ rutas.put('/editar',
  * @swagger
  * /estudiantes/eliminar:
  *   delete:
- *     summary: Elimina un estudiante existente
+ *     summary: Elimina un Estudiante
  *     tags: [Estudiantes]
  *     parameters:
  *       - in: query
@@ -235,24 +149,15 @@ rutas.put('/editar',
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del Estudiante a eliminar.
+ *           description: ID del estudiante a eliminar
  *     responses:
  *       200:
- *         description: Estudiante eliminada correctamente.
- *       404:
- *         description: El ID del Estudiante no existe.
- *       500:
- *         description: Error en el servidor al eliminar el Estudiante.
+ *         description: Estudiante eliminado
+ *       400:
+ *         description: Error en los datos proporcionados
  */
 rutas.delete('/eliminar',
-    query("id_estudiante")
-        .isInt().withMessage("El id del estudiante debe ser un entero")
-        .custom(async value => {
-            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id_estudiante: value } });
-            if (!buscarEstudiante) {
-                throw new Error('El id del estudiante no existe');
-            }
-        }),
+    query("id_estudiante").isInt().withMessage('El id del estudiante debe ser un entero'),
     controladorEstudiante.eliminar
 );
 
