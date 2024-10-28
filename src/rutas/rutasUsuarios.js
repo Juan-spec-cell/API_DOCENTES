@@ -245,4 +245,6 @@ rutas.delete('/eliminar',
     controladorUsuario.eliminar
 );
 
+rutas.post('/recuperar', controladorUsuario.recuperarContrasena);
+
 module.exports = rutas;

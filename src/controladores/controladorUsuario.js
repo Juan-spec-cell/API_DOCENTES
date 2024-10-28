@@ -264,3 +264,38 @@ exports.GuardarImagen = async (req, res) => {
     res.json({ msj: "El id del usuario no existe" });
   }
 };
+
+exports.recuperarContrasena = async(req, res) => {
+  // Validar entrada de datos
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json(errors.array());
+  }
+
+try {
+  const { correo} = req.body;
+
+  const usuario = await modelo.findOne({
+    where: {
+      [Op.or]: [
+        {correo: {[Op.like]: correo}}
+      ]
+    }
+  });
+  if (!usuario) {
+    return res.status(404).json({ error: 'Usuario no encontrado' });
+  }
+  await usuario.update({ pin: '123456' });
+  enviarCorreo({
+    para: correo,
+    asunto: 'Recuperacion de contrasena', 
+    descripcion: 'Correo enviado para la recuperacion de la contrasena', 
+    html: '<h1>Pin: 123456</h1><p>Hola</p>'
+  })
+  res.json({ message: 'Correo enviado correctamente' });
+  } catch(error) {
+    res.status(500).json({ error: 'Error al actualizar el usuario'});
+    console.log(error);
+  }
+  
+};
