@@ -1,8 +1,10 @@
 const sequelize = require('sequelize');
 const db = require('../configuracion/db');
+const Estudiante = require('./estudiante');
+const Asignatura = require('./asignatura');
 
 const Calificacion = db.define(
-    "calificacion",
+    "Calificacion",
     {
         id_calificacion: {
             type: sequelize.INTEGER,
@@ -10,28 +12,24 @@ const Calificacion = db.define(
             autoIncrement: true,
             allowNull: false,
         },
-        id_asignatura: {
-            type: sequelize.INTEGER,
-            allowNull: false,
-            references: {
-                model: 'asignaturas',
-                key: 'id_asignatura',
-            }
-        },
         id_estudiante: {
             type: sequelize.INTEGER,
             allowNull: false,
             references: {
-                model: 'estudiantes',
+                model: Estudiante,
                 key: 'id_estudiante',
             }
         },
-        calificacion: {
-            type: sequelize.DECIMAL(5, 2),
+        id_asignatura: {
+            type: sequelize.INTEGER,
             allowNull: false,
+            references: {
+                model: Asignatura,
+                key: 'id_asignatura',
+            }
         },
-        fecha: {
-            type: sequelize.DATE,
+        nota: {
+            type: sequelize.FLOAT,
             allowNull: false,
         }
     },
@@ -40,11 +38,10 @@ const Calificacion = db.define(
     }
 );
 
-// Definimos las relaciones en este método
-Calificacion.relaciones = (models) => {
-    Calificacion.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura' });
-    Calificacion.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante' });
-    Calificacion.belongsTo(models.Actividad, { foreignKey: 'id_asignatura' });
+// Definición de las relaciones
+Calificacion.relaciones = (modelos) => {
+    Calificacion.belongsTo(modelos.Estudiante, { foreignKey: 'id_estudiante' });
+    Calificacion.belongsTo(modelos.Asignatura, { foreignKey: 'id_asignatura' });
 };
 
 module.exports = Calificacion;

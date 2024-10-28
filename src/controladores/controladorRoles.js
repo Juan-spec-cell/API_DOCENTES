@@ -1,10 +1,10 @@
-const modelo = require('../modelos/actividad'); // Asegúrate de que esta ruta sea correcta
+const modelo = require('../modelos/roles'); // Asegúrate de que esta ruta sea correcta
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
 
 exports.inicio = (req, res) => {
     const objeto = {
-        titulo: 'Rutas de Actividades'
+        titulo: 'Rutas de Roles'
     };
     res.json(objeto);
 };
@@ -15,20 +15,15 @@ exports.guardar = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { id_asignatura, tipo_actividad, fecha } = req.body;
+    const { nombre_rol } = req.body;
     try {
-        const nuevaActividad = await modelo.create({
-            id_asignatura: id_asignatura,
-            tipo_actividad: tipo_actividad,
-            fecha: fecha
+        const nuevoRol = await modelo.create({
+            nombre_rol: nombre_rol
         });
-        res.status(201).json({
-            message: "Actividad guardada con éxito",
-            data: nuevaActividad
-        });
+        res.status(201).json(nuevoRol);
     } catch (error) {
         res.status(500).json({
-            message: "Error al guardar la actividad",
+            message: "Error al guardar el rol",
             error: error.message
         });
     }
@@ -47,7 +42,7 @@ exports.listar = async (req, res) => {
         enviar(200, contenido, res);
     } catch (error) {
         contenido.tipo = 0;
-        contenido.msj = "Error al cargar los datos de actividades";
+        contenido.msj = "Error al cargar los datos de roles";
         enviar(500, contenido, res);
     }
 };
@@ -59,16 +54,14 @@ function enviar(status, contenido, res) {
 
 exports.editar = async (req, res) => {
     const { id } = req.query;
-    const { id_asignatura, tipo_actividad, fecha } = req.body;
+    const { nombre_rol } = req.body;
     try {
-        var buscar_actividad = await modelo.findOne({ where: { id_actividad: id } });
-        if (!buscar_actividad) {
+        var buscar_rol = await modelo.findOne({ where: { id: id } });
+        if (!buscar_rol) {
             res.json({ msj: "El id no existe" });
         } else {
-            buscar_actividad.id_asignatura = id_asignatura;
-            buscar_actividad.tipo_actividad = tipo_actividad;
-            buscar_actividad.fecha = fecha;
-            await buscar_actividad.save()
+            buscar_rol.nombre_rol = nombre_rol;
+            await buscar_rol.save()
                 .then((data) => {
                     res.json(data);
                 }).catch((er) => {
@@ -92,12 +85,12 @@ exports.eliminar = async (req, res) => {
         res.json({ msj: "Hay errores en la petición", error: msjerror });
     } else {
         try {
-            var busqueda = await modelo.findOne({ where: { id_actividad: id } });
+            var busqueda = await modelo.findOne({ where: { id: id } });
             console.log(busqueda);
             if (!busqueda) {
                 res.json({ msj: "El id no existe" });
             } else {
-                await modelo.destroy({ where: { id_actividad: id } })
+                await modelo.destroy({ where: { id: id } })
                     .then((data) => {
                         res.json({ msj: "Registro eliminado", data: data });
                     })
@@ -123,8 +116,8 @@ exports.busqueda = async (req, res) => {
     } else {
         try {
             const whereClause = {};
-            if (req.query.id) whereClause.id_actividad = req.query.id;
-            if (req.query.tipo) whereClause.tipo_actividad = req.query.tipo;
+            if (req.query.id) whereClause.id = req.query.id;
+            if (req.query.tipo) whereClause.tipo_rol = req.query.tipo;
             const busqueda = await modelo.findAll({ where: { [Op.or]: whereClause } });
             res.json(busqueda);
         } catch (error) {
@@ -143,7 +136,7 @@ exports.busqueda_id = async (req, res) => {
         res.json({ msj: "Hay errores en la petición", error: msjerror });
     } else {
         try {
-            const busqueda = await modelo.findOne({ where: { id_actividad: req.query.id } });
+            const busqueda = await modelo.findOne({ where: { id: req.query.id } });
             res.json(busqueda);
         } catch (error) {
             res.json(error);
@@ -152,5 +145,5 @@ exports.busqueda_id = async (req, res) => {
 };
 
 exports.buscarPorId = async (id) => {
-    return await modelo.findOne({ where: { id_actividad: id } });
+    return await modelo.findOne({ where: { id: id } });
 };

@@ -1,9 +1,9 @@
 const sequelize = require('sequelize');
 const db = require('../configuracion/db');
-const Asignatura = require('./asignatura'); // Asegúrate de importar los modelos necesarios
+const Asignatura = require('./asignatura');
 
 const Actividad = db.define(
-    "actividad",
+    "Actividad",
     {
         id_actividad: {
             type: sequelize.INTEGER,
@@ -15,7 +15,7 @@ const Actividad = db.define(
             type: sequelize.INTEGER,
             allowNull: false,
             references: {
-                model: 'asignaturas',
+                model: Asignatura,
                 key: 'id_asignatura',
             }
         },

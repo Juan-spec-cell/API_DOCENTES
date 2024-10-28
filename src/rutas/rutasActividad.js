@@ -1,7 +1,6 @@
 const { Router } = require('express');
 const { body, query } = require('express-validator');
-const controladorActividad = require('../controladores/controladorActividad');
-const ModeloActividad = require('../modelos/actividad');
+const controladorActividad = require('../controladores/controladorActividad'); // Asegúrate de que este controlador existe
 const rutas = Router();
 
 /**
@@ -13,25 +12,46 @@ const rutas = Router();
 
 /**
  * @swagger
- * /actividades:
- *   get:
- *     summary: Inicializa el controlador de actividades
- *     tags: [Actividades]
- *     responses:
- *       200:
- *         description: Controlador inicializado
- */
-rutas.get('/', controladorActividad.inicio);
-
-/**
- * @swagger
  * /actividades/listar:
  *   get:
  *     summary: Lista todas las actividades
  *     tags: [Actividades]
  *     responses:
  *       200:
- *         description: Lista de actividades
+ *         description: Lista de actividades.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                   description: Tipo de respuesta, donde 0 indica error y 1 indica éxito.
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id_actividad:
+ *                         type: integer
+ *                         description: ID de la actividad.
+ *                       id_asignatura:
+ *                         type: integer
+ *                         description: ID de la asignatura.
+ *                       tipo_actividad:
+ *                         type: string
+ *                         enum: [Acumulativo, Examen]
+ *                         description: Tipo de actividad.
+ *                       fecha:
+ *                         type: string
+ *                         format: date
+ *                         description: Fecha de la actividad.
+ *                 msj:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       500:
+ *         description: Error al cargar los datos de actividades.
  */
 rutas.get('/listar', controladorActividad.listar);
 
@@ -50,7 +70,7 @@ rutas.get('/listar', controladorActividad.listar);
  *             properties:
  *               id_asignatura:
  *                 type: integer
- *                 description: ID de la asignatura asociada
+ *                 description: ID de la asignatura
  *               tipo_actividad:
  *                 type: string
  *                 enum: [Acumulativo, Examen]
@@ -66,18 +86,9 @@ rutas.get('/listar', controladorActividad.listar);
  *         description: Error en los datos proporcionados
  */
 rutas.post('/guardar',
-    body("id_asignatura")
-        .isInt().withMessage('El id de asignatura debe ser un entero')
-        .custom(async value => {
-            const asignaturaExistente = await ModeloActividad.sequelize.models.asignatura.findOne({ where: { id_asignatura: value } });
-            if (!asignaturaExistente) {
-                throw new Error('El id de asignatura no existe');
-            }
-        }),
-    body("tipo_actividad")
-        .isIn(['Acumulativo', 'Examen']).withMessage('El tipo de actividad debe ser "Acumulativo" o "Examen"'),
-    body("fecha")
-        .isDate().withMessage('La fecha debe ser una fecha válida'),
+    body("id_asignatura").notEmpty().withMessage('Ingrese un valor en el ID de la asignatura'),
+    body("tipo_actividad").notEmpty().withMessage('Ingrese un valor en el tipo de actividad'),
+    body("fecha").notEmpty().withMessage('Ingrese una fecha para la actividad'),
     controladorActividad.guardar
 );
 
@@ -89,7 +100,7 @@ rutas.post('/guardar',
  *     tags: [Actividades]
  *     parameters:
  *       - in: query
- *         name: id_actividad
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -103,7 +114,7 @@ rutas.post('/guardar',
  *             properties:
  *               id_asignatura:
  *                 type: integer
- *                 description: ID de la asignatura asociada (opcional)
+ *                 description: ID de la asignatura (opcional)
  *               tipo_actividad:
  *                 type: string
  *                 enum: [Acumulativo, Examen]
@@ -119,35 +130,21 @@ rutas.post('/guardar',
  *         description: Error en los datos proporcionados
  */
 rutas.put('/editar',
-    query("id_actividad")
+    query("id")
         .isInt().withMessage("El id de la actividad debe ser un entero")
         .custom(async value => {
             if (!value) {
                 throw new Error('El id no permite valores nulos');
             } else {
-                const buscarActividad = await ModeloActividad.findOne({ where: { id_actividad: value } });
+                const buscarActividad = await controladorActividad.buscarPorId(value);
                 if (!buscarActividad) {
                     throw new Error('El id de la actividad no existe');
                 }
             }
         }),
-    body("id_asignatura")
-        .optional()
-        .isInt().withMessage('El id de asignatura debe ser un entero')
-        .custom(async value => {
-            if (value) {
-                const asignaturaExistente = await ModeloActividad.sequelize.models.asignatura.findOne({ where: { id_asignatura: value } });
-                if (!asignaturaExistente) {
-                    throw new Error('El id de asignatura no existe');
-                }
-            }
-        }),
-    body("tipo_actividad")
-        .optional()
-        .isIn(['Acumulativo', 'Examen']).withMessage('El tipo de actividad debe ser "Acumulativo" o "Examen"'),
-    body("fecha")
-        .optional()
-        .isDate().withMessage('La fecha debe ser una fecha válida'),
+    body("id_asignatura").optional().isInt().withMessage('El ID de la asignatura debe ser un entero'),
+    body("tipo_actividad").optional().isString().withMessage('El tipo de actividad debe ser una cadena de texto'),
+    body("fecha").optional().isString().withMessage('La fecha debe ser una cadena de texto'),
     controladorActividad.editar
 );
 
@@ -159,7 +156,7 @@ rutas.put('/editar',
  *     tags: [Actividades]
  *     parameters:
  *       - in: query
- *         name: id_actividad
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -171,13 +168,13 @@ rutas.put('/editar',
  *         description: Error en los datos proporcionados
  */
 rutas.delete('/eliminar',
-    query("id_actividad")
+    query("id")
         .isInt().withMessage("El id de la actividad debe ser un entero")
         .custom(async value => {
             if (!value) {
                 throw new Error('El id no permite valores nulos');
             } else {
-                const buscarActividad = await ModeloActividad.findOne({ where: { id_actividad: value } });
+                const buscarActividad = await controladorActividad.buscarPorId(value);
                 if (!buscarActividad) {
                     throw new Error('El id de la actividad no existe');
                 }

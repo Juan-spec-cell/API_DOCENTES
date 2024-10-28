@@ -1,3 +1,5 @@
+const dbconnect = require('../configuracion/db'); 
+
 const ModeloCarrera = require('../modelos/carrera');
 const ModeloDocente = require('../modelos/docente');
 const ModeloEstudiante = require('../modelos/estudiante');
@@ -7,13 +9,17 @@ const ModeloAsistencia = require('../modelos/asistencia');
 const ModeloPeriodo = require('../modelos/periodo');
 const ModeloMatricula = require('../modelos/matricula');
 const ModeloActividad = require('../modelos/actividad');
-const ModeloUsuarios = require('../modelos/usuario');
+const ModeloUsuarios = require('../modelos/usuario'); // Corregido: Asegúrate de que esta ruta sea correcta
+const ModeloRoles = require('../modelos/roles');
 
 // Definir las relaciones para el modelo de usuario
 ModeloUsuarios.relaciones = function(modelos) {
-    this.hasMany(modelos.Calificacion, { foreignKey: 'usuarioId' });
-    this.hasOne(modelos.Docente, { foreignKey: 'usuarioId' });
-    this.hasOne(modelos.Estudiante, { foreignKey: 'usuarioId' });
+    this.belongsTo(modelos.Roles, { foreignKey: 'rolId', as: 'rol' });
+};
+
+// Definir las relaciones para el modelo de roles
+ModeloRoles.relaciones = function(modelos) {
+    this.hasMany(modelos.Usuarios, { foreignKey: 'rolId', as: 'usuarios' });
 };
 
 // Definición de relaciones entre los modelos
@@ -27,7 +33,8 @@ const modelos = {
     Periodo: ModeloPeriodo,
     Matricula: ModeloMatricula,
     Actividad: ModeloActividad,
-    Usuario: ModeloUsuarios,
+    Usuarios: ModeloUsuarios,
+    Roles: ModeloRoles,
 };
 
 // Establecer las relaciones llamando al método en cada modelo
@@ -39,17 +46,17 @@ Object.values(modelos).forEach(modelo => {
 
 async function sincronizarModelos() {
     try {
-        // Sincroniza primero el modelo de Usuarios
-        await modelos.Usuario.sync();
+        // Sincroniza primero el modelo de Usuarios y Roles
+        await modelos.Roles.sync();
+        await modelos.Usuarios.sync();
 
         // Luego, sincroniza el resto de los modelos
-        await Promise.all(Object.values(modelos).filter(modelo => modelo !== modelos.Usuario).map(modelo => modelo.sync()));
+        await Promise.all(Object.values(modelos).filter(modelo => modelo !== modelos.Usuarios && modelo !== modelos.Roles).map(modelo => modelo.sync()));
 
         console.log("Todos los modelos fueron sincronizados correctamente");
     } catch (error) {
         console.error("Error al sincronizar uno o más modelos:", error);
     }
 }
-
 
 module.exports = sincronizarModelos;
