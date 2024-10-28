@@ -1,4 +1,3 @@
-// Configuración de CORS
 const corsOptions = {
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Permitir estos métodos
