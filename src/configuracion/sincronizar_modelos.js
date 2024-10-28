@@ -30,8 +30,8 @@ const modelos = {
     Asignatura: ModeloAsignatura,
     Calificacion: ModeloCalificacion,
     Asistencia: ModeloAsistencia,
-    Periodo: ModeloPeriodo,
     Matricula: ModeloMatricula,
+    Periodo: ModeloPeriodo,
     Actividad: ModeloActividad,
     Usuarios: ModeloUsuarios,
     Roles: ModeloRoles,
@@ -50,8 +50,11 @@ async function sincronizarModelos() {
         await modelos.Roles.sync();
         await modelos.Usuarios.sync();
 
+        // Sincroniza el modelo de Periodo antes de Matricula
+        await modelos.Periodo.sync();
+
         // Luego, sincroniza el resto de los modelos
-        await Promise.all(Object.values(modelos).filter(modelo => modelo !== modelos.Usuarios && modelo !== modelos.Roles).map(modelo => modelo.sync()));
+        await Promise.all(Object.values(modelos).filter(modelo => modelo !== modelos.Usuarios && modelo !== modelos.Roles && modelo !== modelos.Periodo).map(modelo => modelo.sync()));
 
         console.log("Todos los modelos fueron sincronizados correctamente");
     } catch (error) {
