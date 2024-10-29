@@ -3,6 +3,8 @@ const { validationResult } = require("express-validator");
 const fs = require("fs");
 const { Op } = require("sequelize");
 const path = require("path");
+const { enviarCorreo } = require("../configuracion/correo");
+const nodemailer = require("nodemailer");
 
 exports.inicio = (req, res) => {
   const rutas = [
@@ -27,8 +29,8 @@ exports.guardar = async (req, res) => {
   const {
     nombre_usuario,
     apellido_usuario,
-    correo_electronico_usuario,
-    codigo_pais_telefono_usuario,
+    correo,
+    codigo_pais,
     telefono_usuario,
     genero_usuario,
     contraseña_usuario,
@@ -38,8 +40,8 @@ exports.guardar = async (req, res) => {
     .create({
       nombre_usuario: nombre_usuario,
       apellido_usuario: apellido_usuario,
-      correo_electronico_usuario: correo_electronico_usuario,
-      codigo_pais_telefono_usuario: codigo_pais_telefono_usuario,
+      correo: correo,
+      codigo_pais: codigo_pais,
       telefono_usuario: telefono_usuario,
       genero_usuario: genero_usuario,
       contraseña_usuario: contraseña_usuario,
@@ -81,8 +83,8 @@ exports.editar = async (req, res) => {
   const {
     nombre_usuario,
     apellido_usuario,
-    correo_electronico_usuario,
-    codigo_pais_telefono_usuario,
+    correo,
+    codigo_pais,
     telefono_usuario,
     genero_usuario,
     contraseña_usuario,
@@ -96,10 +98,10 @@ exports.editar = async (req, res) => {
     } else {
       (buscar_usuario.nombre_usuario = nombre_usuario),
         (buscar_usuario.apellido_usuario = apellido_usuario),
-        (buscar_usuario.correo_electronico_usuario =
-          correo_electronico_usuario),
-        (buscar_usuario.codigo_pais_telefono_usuario =
-          codigo_pais_telefono_usuario),
+        (buscar_usuario.correo =
+          correo),
+        (buscar_usuario.codigo_pais =
+          codigo_pais),
         (buscar_usuario.telefono_usuario = telefono_usuario),
         (buscar_usuario.genero_usuario = genero_usuario),
         (buscar_usuario.contraseña_usuario = contraseña_usuario),
@@ -163,7 +165,7 @@ exports.busqueda = async (req, res) => {
     if (req.query.nombre) whereClause.nombre_usuario = req.query.nombre;
     if (req.query.apellido) whereClause.apellido_usuario = req.query.apellido;
     if (req.query.correo)
-      whereClause.correo_electronico_usuario = req.query.correo;
+      whereClause.correo = req.query.correo;
     if (req.query.telefono) whereClause.telefono_usuario = req.query.telefono;
     if (req.query.genero) whereClause.genero_usuario = req.query.genero;
     const busqueda = await modelo.findAll({ where: { [Op.or]: whereClause } });
@@ -204,7 +206,7 @@ exports.busqueda_correo = async (req, res) => {
   } else {
     try {
       const busqueda = await modelo.findAll({
-        where: { correo_electronico_usuario: req.query.correo },
+        where: { correo: req.query.correo },
       });
       res.json(busqueda);
     } catch (error) {

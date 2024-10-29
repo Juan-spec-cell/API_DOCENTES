@@ -26,11 +26,11 @@ const Usuarios = db.define(
         notEmpty: { msg: "El campo apellido no puede estar vacío" },
       },
     },
-    correo_electronico_usuario: {
+    correo: {
       type: sequelize.STRING(250),
       allowNull: true,
     },
-    codigo_pais_telefono_usuario: {
+    codigo_pais: {
       type: sequelize.STRING(5),
       allowNull: true,
     },
