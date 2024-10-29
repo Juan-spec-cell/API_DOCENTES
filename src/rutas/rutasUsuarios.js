@@ -44,7 +44,7 @@ rutas.get('/', controladorUsuario.inicio);
  *                   items:
  *                     type: object
  *                     properties:
- *                       id:
+ *                       id_usuario:
  *                         type: integer
  *                         description: ID del usuario.
  *                       nombre_usuario:
@@ -53,25 +53,15 @@ rutas.get('/', controladorUsuario.inicio);
  *                       apellido_usuario:
  *                         type: string
  *                         description: Apellido del usuario.
- *                       correo_electronico_usuario:
+ *                       email:
  *                         type: string
  *                         description: Correo electrónico del usuario.
- *                       codigo_pais_telefono_usuario:
- *                         type: string
- *                         description: Código del país para el teléfono.
- *                       telefono_usuario:
- *                         type: string
- *                         description: Teléfono del usuario.
- *                       genero_usuario:
- *                         type: string
- *                         enum: [M, F]
- *                         description: Género del usuario.
  *                       contraseña_usuario:
  *                         type: string
  *                         description: Contraseña del usuario.
- *                       imagen:
- *                         type: string
- *                         description: Imagen del usuario.
+ *                       rolId:
+ *                         type: integer
+ *                         description: ID del rol.
  *                 msj:
  *                   type: array
  *                   items:
@@ -100,25 +90,15 @@ rutas.get('/listar', controladorUsuario.listar);
  *               apellido_usuario:
  *                 type: string
  *                 description: Apellido del usuario
- *               correo_electronico_usuario:
+ *               email:
  *                 type: string
  *                 description: Correo electrónico del usuario
- *               codigo_pais_telefono_usuario:
- *                 type: string
- *                 description: Código del país para el teléfono
- *               telefono_usuario:
- *                 type: string
- *                 description: Teléfono del usuario
- *               genero_usuario:
- *                 type: string
- *                 enum: [M, F]
- *                 description: Género del usuario
  *               contraseña_usuario:
  *                 type: string
  *                 description: Contraseña del usuario
- *               imagen:
- *                 type: string
- *                 description: Imagen del usuario
+ *               rolId:
+ *                 type: integer
+ *                 description: ID del rol
  *     responses:
  *       200:
  *         description: Usuario guardado
@@ -128,11 +108,9 @@ rutas.get('/listar', controladorUsuario.listar);
 rutas.post('/guardar',
     body("nombre_usuario").isString().withMessage('El nombre del usuario debe ser una cadena de texto'),
     body("apellido_usuario").isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
-    body("correo_electronico_usuario").optional().isEmail().withMessage('El correo electrónico debe ser válido'),
-    body("codigo_pais_telefono_usuario").optional().isString().withMessage('El código del país debe ser una cadena de texto'),
-    body("telefono_usuario").optional().isString().withMessage('El teléfono del usuario debe ser una cadena de texto'),
-    body("genero_usuario").isIn(['M', 'F']).withMessage('El género debe ser "M" o "F"'),
+    body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
     body("contraseña_usuario").isString().withMessage('La contraseña no puede estar vacía'),
+    body("rolId").isInt().withMessage('El ID del rol debe ser un entero'),
     controladorUsuario.guardar
 );
 
@@ -162,25 +140,15 @@ rutas.post('/guardar',
  *               apellido_usuario:
  *                 type: string
  *                 description: Apellido del usuario (opcional)
- *               correo_electronico_usuario:
+ *               email:
  *                 type: string
  *                 description: Correo electrónico del usuario (opcional)
- *               codigo_pais_telefono_usuario:
- *                 type: string
- *                 description: Código del país para el teléfono (opcional)
- *               telefono_usuario:
- *                 type: string
- *                 description: Teléfono del usuario (opcional)
- *               genero_usuario:
- *                 type: string
- *                 enum: [M, F]
- *                 description: Género del usuario (opcional)
  *               contraseña_usuario:
  *                 type: string
  *                 description: Contraseña del usuario (opcional)
- *               imagen:
- *                 type: string
- *                 description: Imagen del usuario (opcional)
+ *               rolId:
+ *                 type: integer
+ *                 description: ID del rol (opcional)
  *     responses:
  *       200:
  *         description: Usuario editado
@@ -194,7 +162,7 @@ rutas.put('/editar',
             if (!value) {
                 throw new Error('El id no permite valores nulos');
             } else {
-                const buscarUsuario = await ModeloUsuario.findOne({ where: { id_usuario: value } });
+                const buscarUsuario = await controladorUsuario.buscarPorId(value);
                 if (!buscarUsuario) {
                     throw new Error('El id del usuario no existe');
                 }
@@ -202,11 +170,9 @@ rutas.put('/editar',
         }),
     body("nombre_usuario").optional().isString().withMessage('El nombre del usuario debe ser una cadena de texto'),
     body("apellido_usuario").optional().isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
-    body("correo_electronico_usuario").optional().isEmail().withMessage('El correo electrónico debe ser válido'),
-    body("codigo_pais_telefono_usuario").optional().isString().withMessage('El código del país debe ser una cadena de texto'),
-    body("telefono_usuario").optional().isString().withMessage('El teléfono del usuario debe ser una cadena de texto'),
-    body("genero_usuario").optional().isIn(['M', 'F']).withMessage('El género debe ser "M" o "F"'),
+    body("email").optional().isEmail().withMessage('El correo electrónico debe ser válido'),
     body("contraseña_usuario").optional().isString().withMessage('La contraseña no puede estar vacía'),
+    body("rolId").optional().isInt().withMessage('El ID del rol debe ser un entero'),
     controladorUsuario.editar
 );
 
@@ -236,7 +202,7 @@ rutas.delete('/eliminar',
             if (!value) {
                 throw new Error('El id no permite valores nulos');
             } else {
-                const buscarUsuario = await ModeloUsuario.findOne({ where: { id_usuario: value } });
+                const buscarUsuario = await controladorUsuario.buscarPorId(value);
                 if (!buscarUsuario) {
                     throw new Error('El id del usuario no existe');
                 }
@@ -245,6 +211,35 @@ rutas.delete('/eliminar',
     controladorUsuario.eliminar
 );
 
-rutas.post('/recuperar', controladorUsuario.recuperarContrasena);
+/**
+ * @swagger
+ * /usuarios/recuperar:
+ *   post:
+ *     summary: Recupera la contraseña de un usuario
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Correo electrónico del usuario
+ *     responses:
+ *       200:
+ *         description: Correo enviado correctamente
+ *       400:
+ *         description: Error en los datos proporcionados
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al actualizar el usuario
+ */
+rutas.post('/recuperar',
+    body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
+    controladorUsuario.recuperarContrasena
+);
 
 module.exports = rutas;

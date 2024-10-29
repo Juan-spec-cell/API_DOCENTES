@@ -1,8 +1,11 @@
 const sequelize = require("sequelize");
-const bcrypt = require("bcrypt");
+const argon2 = require("argon2");
 const db = require("../configuracion/db");
 const Roles = require('./roles');
+const Docente = require('./docente');
+const Estudiante = require('./estudiante');
 
+// Definición del modelo Usuarios
 const Usuarios = db.define(
   "Usuarios",
   {
@@ -26,35 +29,20 @@ const Usuarios = db.define(
         notEmpty: { msg: "El campo apellido no puede estar vacío" },
       },
     },
-    correo: {
+    email: {
       type: sequelize.STRING(250),
-      allowNull: true,
-    },
-    codigo_pais: {
-      type: sequelize.STRING(5),
-      allowNull: true,
-    },
-    telefono_usuario: {
-      type: sequelize.STRING(20),
-      allowNull: true,
-    },
-    genero_usuario: {
-      type: sequelize.ENUM("M", "F"),
       allowNull: false,
       validate: {
-        notEmpty: { msg: "El campo genero no puede ir vacío." },
+        isEmail: { msg: "Debe ser un correo electrónico válido" },
+        notEmpty: { msg: "El campo correo electrónico no puede ir vacío" },
       },
     },
     contraseña_usuario: {
       type: sequelize.STRING(250),
       allowNull: false,
       validate: {
-        notEmpty: { msg: "El campo contraseña no puede ir vacío." },
+        notEmpty: { msg: "El campo contraseña no puede ir vacío" },
       },
-    },
-    imagen: {
-      type: sequelize.STRING(250),
-      allowNull: true,
     },
     rolId: {
       type: sequelize.INTEGER,
@@ -62,38 +50,64 @@ const Usuarios = db.define(
         model: Roles,
         key: 'id_rol',
       },
+      validate: {
+        isIn: {
+          args: [[1, 2]], // Suponiendo que 1 es "Estudiante" y 2 es "Docente"
+          msg: "El rol debe ser 'Estudiante' o 'Docente'",
+        },
+      },
     },
   },
   {
     tableName: "usuarios",
     timestamps: true,
     hooks: {
-      beforeCreate(usuarios) {
-        usuarios.contraseña_usuario = bcrypt.hashSync(
-          usuarios.contraseña_usuario,
-          bcrypt.genSaltSync(10)
-        );
+      beforeCreate: async (usuario) => {
+        usuario.contraseña_usuario = await argon2.hash(usuario.contraseña_usuario);
       },
-      beforeUpdate(usuarios) {
-        usuarios.contraseña_usuario = bcrypt.hashSync(
-          usuarios.contraseña_usuario,
-          bcrypt.genSaltSync(10)
-        );
+      afterCreate: async (usuario) => {
+        console.log("Rol ID:", usuario.rolId); // Para depuración
+        try {
+          if (usuario.rolId === 1) {
+            // Crear Docente
+            await Docente.create({
+              id_usuario: usuario.id_usuario,
+              nombre: usuario.nombre_usuario,
+              apellido: usuario.apellido_usuario,
+              email: usuario.email,
+            });
+            console.log("Docente creado exitosamente");
+          } else if (usuario.rolId === 2) {
+            // Crear Estudiante
+            await Estudiante.create({
+              id_usuario: usuario.id_usuario,
+              nombre: usuario.nombre_usuario,
+              apellido: usuario.apellido_usuario,
+              email: usuario.email,
+            });
+            console.log("Estudiante creado exitosamente");
+          }
+        } catch (error) {
+          console.error("Error al crear el rol relacionado:", error);
+        }
+      },
+      beforeUpdate: async (usuario) => {
+        if (usuario.changed('contraseña_usuario')) {
+          usuario.contraseña_usuario = await argon2.hash(usuario.contraseña_usuario);
+        }
       },
     },
   }
 );
 
-Usuarios.prototype.VerificarContrasena = (con, com) => {
-  console.log(con);
-  console.log(com);
-  return bcrypt.compareSync(con, com);
+// Método de instancia para verificar la contraseña
+Usuarios.prototype.VerificarContrasena = async function (con) {
+  return await argon2.verify(this.contraseña_usuario, con);
 };
 
-Usuarios.prototype.CifrarContrasena = (con) => {
-  console.log(con);
-  const hash = bcrypt.hashSync(con, 10);
-  return hash;
+// Método de instancia para cifrar la contraseña
+Usuarios.prototype.CifrarContrasena = async function (con) {
+  return await argon2.hash(con);
 };
 
 // Definición de las relaciones

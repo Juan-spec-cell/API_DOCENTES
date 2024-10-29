@@ -21,4 +21,11 @@ const Roles = db.define(
   }
 );
 
+// Sincronizar el modelo y agregar roles predeterminados
+Roles.sync({ force: false }).then(() => {
+  // Agregar roles predeterminados si no existen
+  Roles.findOrCreate({ where: { nombre_rol: "Estudiante" } });
+  Roles.findOrCreate({ where: { nombre_rol: "Docente" } });
+});
+
 module.exports = Roles;
