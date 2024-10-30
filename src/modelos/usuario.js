@@ -44,19 +44,19 @@ const Usuarios = db.define(
         notEmpty: { msg: "El campo contraseña no puede ir vacío" },
       },
     },
-    rolId: {
-      type: sequelize.INTEGER,
-      references: {
-        model: Roles,
-        key: 'id_rol',
-      },
-      validate: {
-        isIn: {
-          args: [[1, 2]], // Suponiendo que 1 es "Estudiante" y 2 es "Docente"
-          msg: "El rol debe ser 'Estudiante' o 'Docente'",
-        },
-      },
+    estado:{
+      type: DataTypes.ENUM('Activo', 'Bloqueado', 'Inactivo', 'Logeado'),
+      defaultValue: 'Activo'
     },
+    intentos: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    tipoUsuario: {
+      type: DataTypes.ENUM('Docente', 'Empleado'),
+      allowNull: false
+    }
+
   },
   {
     tableName: "usuarios",
@@ -110,9 +110,5 @@ Usuarios.prototype.CifrarContrasena = async function (con) {
   return await argon2.hash(con);
 };
 
-// Definición de las relaciones
-Usuarios.relaciones = () => {
-  Usuarios.belongsTo(Roles, { foreignKey: 'rolId', as: 'rol' });
-};
 
 module.exports = Usuarios;

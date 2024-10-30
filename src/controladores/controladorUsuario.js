@@ -3,6 +3,10 @@ const { validationResult } = require("express-validator");
 const { Op } = require("sequelize");
 const { enviarCorreo } = require("../configuracion/correo");
 const crypto = require("crypto"); // Asegúrate de importar crypto
+const {getToken} = require('../configuracion/correo');
+const Estudiante = require("../modelos/estudiante");
+const Docente = require("../modelos/docente");
+const argon2 = require('argon2');
 
 exports.inicio = (req, res) => {
     const rutas = [
@@ -155,5 +159,84 @@ exports.recuperarContrasena = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Error al actualizar el usuario' });
         console.log(error);
+    }
+};
+
+//Actualizar la contraseña
+exports.actualizarContrasena = async(req, res) => {
+    //Validar entrada de datos
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+        return res.status(400).json(errors.array());
+    }
+    try{
+        const {email, contrasena, pin} = req.body;
+
+        const usuario = await usuario.findOne({
+            where: {
+                correo: email
+            }
+        });
+        if (!usuario){
+            return res.status(404).json({ error: 'Usuario no encontrado'});
+        }
+        else if(usuario.pin != pin){
+            return res.status(404).json({ error: 'El pin no responde'});
+        }
+        const hash = await argon2.hash(contrasena, {
+            type: argon2.argon2id,
+            memoryCost: 2 ** 16,
+            timeCost: 4,
+            parallelism: 2,
+        });
+        await usuario.update({ contrasena: hash});
+        res.json({ message: 'Usuario actualizado correctamente'});
+    }catch (error){
+        res.status(500).json({ error: 'Error al actualizar el usuario'});
+    }
+};
+
+//Inicio de Sesion
+exports.iniciarSesion = async (req, res) => {
+    //validar entrada de datos
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+        return res.status(400).json(errors.array());
+    }
+    try{
+        const {login, contrasena} = req.body;
+
+        const usuario = await usuario.findOne({
+            atributes: ['nombre', 'tipoUsuario', 'email','contrasena'],
+            
+            where: {
+                [Op.or]: [
+                    {email: {[Op.like]: login}},
+                    {nombre: {[Op.like]: login}},
+                ],
+                estado: 'Activo'
+            }
+        });
+        if(!usuario){
+            return res.status(404).json({ error: 'Usuario o contrasena es incorrecto'});
+        }
+        else{
+            if(await argon2.verify(usuario.contrasena, contrasena)){
+                const Usuario ={
+                    login: usuario.nombre,
+                    tipo: usuario.tipoUsuario,
+                    correo: usuario.email,
+                    datoPersonales: usuario.tipoUsuario=='Docente'? usuario.docente : usuario.estudiante
+                };
+                const Token = getToken({ id: usuario.id});
+                return res.json({ Token, Usuario});
+            }else {
+                return res.status(404).json({ error: 'Usuario o contrasena incorrecta'});
+            }
+
+        }
+    }catch(error){
+        console.log(error);
+        res.status(500).json({ error: 'Error al iniciar sesion'});
     }
 };
