@@ -1,7 +1,6 @@
 const sequelize = require("sequelize");
 const argon2 = require("argon2");
 const db = require("../configuracion/db");
-const Roles = require('./roles');
 const Docente = require('./docente');
 const Estudiante = require('./estudiante');
 
@@ -32,6 +31,10 @@ const Usuarios = db.define(
     email: {
       type: sequelize.STRING(250),
       allowNull: false,
+      unique: {
+        args: true,
+        msg: "El correo electrónico ya está en uso",
+      },
       validate: {
         isEmail: { msg: "Debe ser un correo electrónico válido" },
         notEmpty: { msg: "El campo correo electrónico no puede ir vacío" },
@@ -44,19 +47,24 @@ const Usuarios = db.define(
         notEmpty: { msg: "El campo contraseña no puede ir vacío" },
       },
     },
-    estado:{
-      type: DataTypes.ENUM('Activo', 'Bloqueado', 'Inactivo', 'Logeado'),
+    estado: {
+      type: sequelize.ENUM('Activo', 'Bloqueado', 'Inactivo', 'Logeado'),
       defaultValue: 'Activo'
     },
     intentos: {
-      type: DataTypes.INTEGER,
+      type: sequelize.INTEGER,
       defaultValue: 0
     },
     tipoUsuario: {
-      type: DataTypes.ENUM('Docente', 'Empleado'),
-      allowNull: false
-    }
-
+      type: sequelize.ENUM('Docente', 'Estudiante'),
+      allowNull: false,
+      validate: {
+        isIn: {
+          args: [['Docente', 'Estudiante']],
+          msg: "El tipo de usuario debe ser 'Docente' o 'Estudiante'",
+        },
+      },
+    },
   },
   {
     tableName: "usuarios",
@@ -66,34 +74,36 @@ const Usuarios = db.define(
         usuario.contraseña_usuario = await argon2.hash(usuario.contraseña_usuario);
       },
       afterCreate: async (usuario) => {
-        console.log("Rol ID:", usuario.rolId); // Para depuración
-        try {
-          if (usuario.rolId === 1) {
-            // Crear Docente
-            await Docente.create({
-              id_usuario: usuario.id_usuario,
-              nombre: usuario.nombre_usuario,
-              apellido: usuario.apellido_usuario,
-              email: usuario.email,
-            });
-            console.log("Docente creado exitosamente");
-          } else if (usuario.rolId === 2) {
-            // Crear Estudiante
-            await Estudiante.create({
-              id_usuario: usuario.id_usuario,
-              nombre: usuario.nombre_usuario,
-              apellido: usuario.apellido_usuario,
-              email: usuario.email,
-            });
-            console.log("Estudiante creado exitosamente");
-          }
-        } catch (error) {
-          console.error("Error al crear el rol relacionado:", error);
+        if (usuario.tipoUsuario === 'Estudiante') {
+          await Estudiante.create({
+            id_usuario: usuario.id_usuario,
+            nombre: usuario.nombre_usuario,
+            apellido: usuario.apellido_usuario,
+            email: usuario.email,
+          });
+        } else if (usuario.tipoUsuario === 'Docente') {
+          await Docente.create({
+            id_usuario: usuario.id_usuario,
+            nombre: usuario.nombre_usuario,
+            apellido: usuario.apellido_usuario,
+            email: usuario.email,
+          });
         }
       },
       beforeUpdate: async (usuario) => {
         if (usuario.changed('contraseña_usuario')) {
           usuario.contraseña_usuario = await argon2.hash(usuario.contraseña_usuario);
+        }
+      },
+      beforeDestroy: async (usuario) => {
+        if (usuario.tipoUsuario === 'Estudiante') {
+          await Estudiante.destroy({
+            where: { id_usuario: usuario.id_usuario }
+          });
+        } else if (usuario.tipoUsuario === 'Docente') {
+          await Docente.destroy({
+            where: { id_usuario: usuario.id_usuario }
+          });
         }
       },
     },
@@ -109,6 +119,5 @@ Usuarios.prototype.VerificarContrasena = async function (con) {
 Usuarios.prototype.CifrarContrasena = async function (con) {
   return await argon2.hash(con);
 };
-
 
 module.exports = Usuarios;

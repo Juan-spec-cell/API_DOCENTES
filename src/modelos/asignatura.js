@@ -40,10 +40,6 @@ const Asignatura = db.define(
 Asignatura.relaciones = (models) => {
     Asignatura.belongsTo(models.Docente, { foreignKey: 'id_docente' });
     Asignatura.belongsTo(models.Carrera, { foreignKey: 'id_carrera' });
-
-    Asignatura.hasMany(models.Calificacion, { foreignKey: 'id_asignatura' });
-    Asignatura.hasMany(models.Asistencia, { foreignKey: 'id_asignatura' });
-    Asignatura.hasMany(models.Actividad, { foreignKey: 'id_asignatura' });
 };
 
 module.exports = Asignatura;

@@ -1,4 +1,6 @@
 const ModeloAsignatura = require('../modelos/asignatura');
+const ModeloDocente = require('../modelos/docente');
+const ModeloCarrera = require('../modelos/carrera');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 
@@ -25,29 +27,32 @@ exports.listar = async (req, res) => {
 };
 
 exports.guardar = async (req, res) => {
-    const { nombre_asignatura, id_docente, id_carrera } = req.body;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    contenido.msj = errores(validationResult(req));
-    if (contenido.msj.length > 0) {
-        return enviar(200, contenido, res);
-    }
-    try {
-        const data = await ModeloAsignatura.create({ nombre_asignatura, id_docente, id_carrera });
-        contenido.tipo = 1;
-        contenido.datos = data;
-        contenido.msj = "Asignatura guardada correctamente";
-        enviar(200, contenido, res);
-    } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al guardar la asignatura";
-        enviar(500, contenido, res);
-    }
-};
+  try {
+      const { nombre_asignatura, id_docente, id_carrera } = req.body;
 
+      // Guardar la asignatura
+      const nuevaAsignatura = await ModeloAsignatura.create({ 
+          nombre_asignatura, 
+          id_docente, 
+          id_carrera 
+      });
+
+      // Obtener los datos del docente y carrera relacionados
+      const docente = await ModeloDocente.findOne({ where: { id_docente } });
+      const carrera = await ModeloCarrera.findOne({ where: { id_carrera } });
+
+      // Preparar la respuesta
+      const response = {
+          nombre_asignatura: nuevaAsignatura.nombre_asignatura,
+          nombre_docente: docente ? docente.nombre : null, // Asegúrate de que 'nombre' es el campo correcto
+          nombre_carrera: carrera ? carrera.nombre : null  // Asegúrate de que 'nombre' es el campo correcto
+      };
+
+      return res.status(201).json(response);
+  } catch (error) {
+      return res.status(400).json({ error: error.message });
+  }
+};
 exports.editar = async (req, res) => {
     const { id_asignatura } = req.query;
     let contenido = {
