@@ -1,4 +1,5 @@
 const ModeloEstudiante = require('../modelos/estudiante');
+const ModeloUsuario = require('../modelos/usuario');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 
@@ -63,28 +64,32 @@ exports.editar = async (req, res) => {
 };
 
 exports.eliminar = async (req, res) => {
-    const { id_estudiante } = req.query;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    try {
-        const estudianteExistente = await ModeloEstudiante.findOne({ where: { id_estudiante } });
-        if (!estudianteExistente) {
-            contenido.msj = "El estudiante no existe";
-            return enviar(404, contenido, res);
-        }
+  const { id_estudiante } = req.query;
+  let contenido = {
+      tipo: 0,
+      datos: [],
+      msj: [],
+  };
+  try {
+      const estudianteExistente = await ModeloEstudiante.findOne({ where: { id_estudiante } });
+      if (!estudianteExistente) {
+          contenido.msj = "El estudiante no existe";
+          return enviar(404, contenido, res);
+      }
 
-        await ModeloEstudiante.destroy({ where: { id_estudiante } });
-        contenido.tipo = 1;
-        contenido.msj = "Estudiante eliminado correctamente";
-        enviar(200, contenido, res);
-    } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al eliminar el estudiante";
-        enviar(500, contenido, res);
-    }
+      const { id_usuario } = estudianteExistente;
+
+      await ModeloEstudiante.destroy({ where: { id_estudiante } });
+      await ModeloUsuario.destroy({ where: { id_usuario } });
+
+      contenido.tipo = 1;
+      contenido.msj = "Estudiante y usuario eliminados correctamente";
+      enviar(200, contenido, res);
+  } catch (error) {
+      contenido.tipo = 0;
+      contenido.msj = "Error en el servidor al eliminar el estudiante y usuario";
+      enviar(500, contenido, res);
+  }
 };
 
 //filtro para buscar por id de Estudiante

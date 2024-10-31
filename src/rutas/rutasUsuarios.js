@@ -59,9 +59,10 @@ rutas.get('/', controladorUsuario.inicio);
  *                       contraseña_usuario:
  *                         type: string
  *                         description: Contraseña del usuario.
- *                       rolId:
- *                         type: integer
- *                         description: ID del rol.
+ *                       nombre_rol:
+ *                         type: string
+ *                         enum: [Estudiante, Docente]
+ *                         description: Rol del usuario.
  *                 msj:
  *                   type: array
  *                   items:
@@ -96,9 +97,10 @@ rutas.get('/listar', controladorUsuario.listar);
  *               contraseña_usuario:
  *                 type: string
  *                 description: Contraseña del usuario
- *               rolId:
- *                 type: integer
- *                 description: ID del rol
+ *               nombre_rol:
+ *                 type: string
+ *                 enum: [Estudiante, Docente]
+ *                 description: Rol del usuario
  *     responses:
  *       200:
  *         description: Usuario guardado
@@ -110,7 +112,8 @@ rutas.post('/guardar',
     body("apellido_usuario").isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
     body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
     body("contraseña_usuario").isString().withMessage('La contraseña no puede estar vacía'),
-    body("rolId").isInt().withMessage('El ID del rol debe ser un entero'),
+    body("nombre_rol").customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
+        .isIn(['Estudiante', 'Docente']).withMessage('El rol debe ser "Estudiante" o "Docente"'),
     controladorUsuario.guardar
 );
 
@@ -146,9 +149,10 @@ rutas.post('/guardar',
  *               contraseña_usuario:
  *                 type: string
  *                 description: Contraseña del usuario (opcional)
- *               rolId:
- *                 type: integer
- *                 description: ID del rol (opcional)
+ *               nombre_rol:
+ *                 type: string
+ *                 enum: [Estudiante, Docente]
+ *                 description: Rol del usuario (opcional)
  *     responses:
  *       200:
  *         description: Usuario editado
@@ -172,7 +176,8 @@ rutas.put('/editar',
     body("apellido_usuario").optional().isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
     body("email").optional().isEmail().withMessage('El correo electrónico debe ser válido'),
     body("contraseña_usuario").optional().isString().withMessage('La contraseña no puede estar vacía'),
-    body("rolId").optional().isInt().withMessage('El ID del rol debe ser un entero'),
+    body("nombre_rol").optional().customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
+        .isIn(['Estudiante', 'Docente']).withMessage('El rol debe ser "Estudiante" o "Docente"'),
     controladorUsuario.editar
 );
 

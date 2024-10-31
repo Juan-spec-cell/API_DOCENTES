@@ -1,8 +1,10 @@
-const modelo = require("../modelos/usuario");
+const Usuarios = require("../modelos/usuario");
+const Estudiante = require("../modelos/estudiante");
+const Docente = require("../modelos/docente");
 const { validationResult } = require("express-validator");
 const { Op } = require("sequelize");
 const { enviarCorreo } = require("../configuracion/correo");
-const crypto = require("crypto"); // Asegúrate de importar crypto
+const crypto = require("crypto"); 
 
 exports.inicio = (req, res) => {
     const rutas = [
@@ -29,17 +31,27 @@ exports.guardar = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { nombre_usuario, apellido_usuario, email, contraseña_usuario, rolId } = req.body;
+    let { nombre_usuario, apellido_usuario, email, contraseña_usuario, nombre_rol } = req.body;
+
+    // Validación y normalización del nombre de rol
+    nombre_rol = nombre_rol.trim().toLowerCase();
+    if (nombre_rol === "docente" || nombre_rol === "estudiante") {
+        nombre_rol = nombre_rol.charAt(0).toUpperCase() + nombre_rol.slice(1);
+    } else {
+        return res.status(400).json({ message: "El rol debe ser 'Docente' o 'Estudiante'." });
+    }
+
     try {
-        const nuevoUsuario = await modelo.create({
+        const nuevoUsuario = await Usuarios.create({
             nombre_usuario,
             apellido_usuario,
             email,
             contraseña_usuario,
-            rolId
+            nombre_rol
         });
         res.status(201).json({ message: "Usuario guardado con éxito", data: nuevoUsuario });
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: "Error al guardar el usuario", error: error.message });
     }
 };
@@ -51,7 +63,7 @@ exports.listar = async (req, res) => {
         msj: [],
     };
     try {
-        const data = await modelo.findAll();
+        const data = await Usuarios.findAll();
         contenido.tipo = 1;
         contenido.datos = data;
         enviar(200, contenido, res);
@@ -68,41 +80,63 @@ function enviar(status, contenido, res) {
 }
 
 exports.editar = async (req, res) => {
-    const { id_usuario } = req.query;
-    const { nombre_usuario, apellido_usuario, email, contraseña_usuario, rolId } = req.body;
+    const { id_usuario } = req.query; // Obtener el ID del usuario de la consulta
+    const { nombre_usuario, apellido_usuario, email, contraseña_usuario, nombre_rol } = req.body;
+
     try {
-        const usuario = await modelo.findOne({ where: { id_usuario } });
-        if (!usuario) {
+        // Buscar el usuario existente
+        const usuarioExistente = await Usuarios.findOne({ where: { id_usuario } });
+        
+        if (!usuarioExistente) {
             return res.status(404).json({ message: "Usuario no encontrado" });
         }
-        usuario.nombre_usuario = nombre_usuario;
-        usuario.apellido_usuario = apellido_usuario;
-        usuario.email = email;
-        usuario.contraseña_usuario = contraseña_usuario;
-        usuario.rolId = rolId;
-        await usuario.save();
-        res.json({ message: "Usuario actualizado con éxito", data: usuario });
+
+        // Actualizar solo los campos que se envían en el cuerpo de la solicitud
+        await Usuarios.update({
+            nombre_usuario: nombre_usuario || usuarioExistente.nombre_usuario,
+            apellido_usuario: apellido_usuario || usuarioExistente.apellido_usuario,
+            email: email || usuarioExistente.email,
+            contraseña_usuario: contraseña_usuario || usuarioExistente.contraseña_usuario,
+            nombre_rol: nombre_rol || usuarioExistente.nombre_rol
+        }, {
+            where: { id_usuario }
+        });
+
+        res.json({ message: "Usuario actualizado con éxito" });
     } catch (error) {
         res.status(500).json({ message: "Error al actualizar el usuario", error: error.message });
     }
 };
 
 exports.eliminar = async (req, res) => {
-    const { id_usuario } = req.query;
     try {
-        const usuario = await modelo.findOne({ where: { id_usuario } });
+        const { id_usuario } = req.query;
+        const usuario = await Usuarios.findOne({ where: { id_usuario } });
+
         if (!usuario) {
             return res.status(404).json({ message: "Usuario no encontrado" });
         }
+
+        // Eliminar dependencias
+        if (usuario.nombre_rol === 'Docente') {
+            // Eliminar dependencias de Docente
+            await Docente.destroy({ where: { id_usuario: usuario.id_usuario } });
+        } else if (usuario.nombre_rol === 'Estudiante') {
+            // Eliminar dependencias de Estudiante
+            await Estudiante.destroy({ where: { id_usuario: usuario.id_usuario } });
+        }
+
+        // Eliminar el usuario
         await usuario.destroy();
         res.json({ message: "Usuario eliminado con éxito" });
     } catch (error) {
         res.status(500).json({ message: "Error al eliminar el usuario", error: error.message });
+        console.log(error);
     }
 };
 
 exports.buscarPorId = async (id) => {
-    return await modelo.findOne({ where: { id_usuario: id } });
+    return await Usuarios.findOne({ where: { id_usuario: id } });
 };
 
 // Función para generar un PIN hexadecimal de 4 dígitos utilizando crypto
@@ -121,7 +155,7 @@ exports.recuperarContrasena = async (req, res) => {
     try {
         const { email } = req.body;
 
-        const usuario = await modelo.findOne({ where: { email } });
+        const usuario = await Usuarios.findOne({ where: { email } });
         if (!usuario) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }

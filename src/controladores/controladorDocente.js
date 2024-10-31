@@ -1,4 +1,5 @@
 const ModeloDocente = require('../modelos/docente');
+const ModeloUsuario = require('../modelos/usuario');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 
@@ -64,25 +65,37 @@ exports.editar = async (req, res) => {
 
 exports.eliminar = async (req, res) => {
     const { id_docente } = req.query;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    try {
-        const docenteExistente = await ModeloDocente.findOne({ where: { id_docente } });
-        if (!docenteExistente) {
-            contenido.msj = "El docente no existe";
-            return enviar(404, contenido, res);
-        }
+let contenido = {
+    tipo: 0,
+    datos: [],
+    msj: [],
+};
+try {
+    const docenteExistente = await ModeloDocente.findOne({ where: { id_docente } });
+    if (!docenteExistente) {
+        contenido.msj = "El docente no existe";
+        return enviar(404, contenido, res);
+    }
 
-        await ModeloDocente.destroy({ where: { id_docente } });
-        contenido.tipo = 1;
-        contenido.msj = "Docente eliminado correctamente";
-        enviar(200, contenido, res);
+    // Buscar el usuario asociado al docente
+    const usuarioExistente = await ModeloUsuario.findOne({ where: { id_usuario: docenteExistente.id_usuario } });
+    if (!usuarioExistente) {
+        contenido.msj = "Usuario asociado no encontrado";
+        return enviar(404, contenido, res);
+    }
+
+    // Eliminar el docente
+    await ModeloDocente.destroy({ where: { id_docente } });
+
+    // Eliminar el usuario asociado
+    await ModeloUsuario.destroy({ where: { id_usuario: docenteExistente.id_usuario } });
+
+    contenido.tipo = 1;
+    contenido.msj = "Docente y usuario asociado eliminados correctamente";
+    enviar(200, contenido, res);
     } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al eliminar el docente";
-        enviar(500, contenido, res);
+    contenido.tipo = 0;
+    contenido.msj = "Error en el servidor al eliminar el docente";
+    enviar(500, contenido, res);
     }
 };

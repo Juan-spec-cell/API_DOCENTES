@@ -1,9 +1,9 @@
 const sequelize = require("sequelize");
 const argon2 = require("argon2");
 const db = require("../configuracion/db");
-const Roles = require('./roles');
 const Docente = require('./docente');
 const Estudiante = require('./estudiante');
+const Roles = require('./roles');
 
 // Definición del modelo Usuarios
 const Usuarios = db.define(
@@ -32,6 +32,10 @@ const Usuarios = db.define(
     email: {
       type: sequelize.STRING(250),
       allowNull: false,
+      unique: {
+        args: true,
+        msg: "El correo electrónico ya está en uso",
+      },
       validate: {
         isEmail: { msg: "Debe ser un correo electrónico válido" },
         notEmpty: { msg: "El campo correo electrónico no puede ir vacío" },
@@ -44,18 +48,24 @@ const Usuarios = db.define(
         notEmpty: { msg: "El campo contraseña no puede ir vacío" },
       },
     },
+    nombre_rol: {
+      type: sequelize.ENUM('Estudiante', 'Docente'),
+      allowNull: false,
+      validate: {
+        isIn: {
+          args: [['Estudiante', 'Docente']],
+          msg: "El rol debe ser 'Estudiante' o 'Docente'",
+        },
+      },
+    },
     rolId: {
       type: sequelize.INTEGER,
       references: {
         model: Roles,
         key: 'id_rol',
       },
-      validate: {
-        isIn: {
-          args: [[1, 2]], // Suponiendo que 1 es "Estudiante" y 2 es "Docente"
-          msg: "El rol debe ser 'Estudiante' o 'Docente'",
-        },
-      },
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     },
   },
   {
@@ -66,34 +76,40 @@ const Usuarios = db.define(
         usuario.contraseña_usuario = await argon2.hash(usuario.contraseña_usuario);
       },
       afterCreate: async (usuario) => {
-        console.log("Rol ID:", usuario.rolId); // Para depuración
-        try {
-          if (usuario.rolId === 1) {
-            // Crear Docente
-            await Docente.create({
-              id_usuario: usuario.id_usuario,
-              nombre: usuario.nombre_usuario,
-              apellido: usuario.apellido_usuario,
-              email: usuario.email,
-            });
-            console.log("Docente creado exitosamente");
-          } else if (usuario.rolId === 2) {
-            // Crear Estudiante
-            await Estudiante.create({
-              id_usuario: usuario.id_usuario,
-              nombre: usuario.nombre_usuario,
-              apellido: usuario.apellido_usuario,
-              email: usuario.email,
-            });
-            console.log("Estudiante creado exitosamente");
-          }
-        } catch (error) {
-          console.error("Error al crear el rol relacionado:", error);
+        if (usuario.nombre_rol === 'Estudiante') {
+          // Crear Estudiante
+          await Estudiante.create({
+            id_usuario: usuario.id_usuario,
+            nombre: usuario.nombre_usuario,
+            apellido: usuario.apellido_usuario,
+            email: usuario.email,
+          });
+        } else if (usuario.nombre_rol === 'Docente') {
+          // Crear Docente
+          await Docente.create({
+            id_usuario: usuario.id_usuario,
+            nombre: usuario.nombre_usuario,
+            apellido: usuario.apellido_usuario,
+            email: usuario.email,
+          });
         }
       },
       beforeUpdate: async (usuario) => {
         if (usuario.changed('contraseña_usuario')) {
           usuario.contraseña_usuario = await argon2.hash(usuario.contraseña_usuario);
+        }
+      },
+      beforeDestroy: async (usuario) => {
+        if (usuario.nombre_rol === 'Estudiante') {
+          // Eliminar Estudiante
+          await Estudiante.destroy({
+            where: { id_usuario: usuario.id_usuario }
+          });
+        } else if (usuario.nombre_rol === 'Docente') {
+          // Eliminar Docente
+          await Docente.destroy({
+            where: { id_usuario: usuario.id_usuario }
+          });
         }
       },
     },
@@ -110,9 +126,7 @@ Usuarios.prototype.CifrarContrasena = async function (con) {
   return await argon2.hash(con);
 };
 
-// Definición de las relaciones
-Usuarios.relaciones = () => {
-  Usuarios.belongsTo(Roles, { foreignKey: 'rolId', as: 'rol' });
-};
+// Define associations
+Usuarios.belongsTo(Roles, { foreignKey: 'rolId' });
 
 module.exports = Usuarios;
