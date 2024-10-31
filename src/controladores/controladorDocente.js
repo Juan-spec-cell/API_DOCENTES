@@ -1,4 +1,5 @@
 const ModeloDocente = require('../modelos/docente');
+const ModeloUsuario = require('../modelos/usuario');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 
@@ -14,33 +15,25 @@ exports.listar = async (req, res) => {
     };
     try {
         const data = await ModeloDocente.findAll();
+        
         contenido.tipo = 1;
-        contenido.datos = data;
+        contenido.datos = data.map(docente => ({
+            id_docente: docente.id_docente,
+            nombre_docente: docente.nombre,
+            apellido_docente: docente.apellido,
+            email: docente.email
+        }));
         enviar(200, contenido, res);
     } catch (error) {
         contenido.tipo = 0;
         contenido.msj = "Error al cargar los datos de docentes";
         enviar(500, contenido, res);
+        console.log(error);
     }
 };
 
 exports.guardar = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ tipo: 0, datos: [], msj: errors.array() });
-    }
-
-    try {
-        const nuevoDocente = await ModeloDocente.create(req.body);
-        res.status(200).json({ tipo: 1, datos: nuevoDocente, msj: 'Docente guardado con éxito' });
-    } catch (error) {
-        console.error('Error al guardar el docente:', error); // Log the error for debugging
-        res.status(500).json({ tipo: 0, datos: [], msj: 'Error en el servidor al guardar el docente' });
-    }
-};
-
-exports.editar = async (req, res) => {
-    const { id_docente } = req.query;
+    const { nombre_docente, apellido_docente, email } = req.body;
     let contenido = {
         tipo: 0,
         datos: [],
@@ -51,14 +44,73 @@ exports.editar = async (req, res) => {
         return enviar(200, contenido, res);
     }
     try {
-        await ModeloDocente.update(req.body, { where: { id_docente } });
+        // Crear nuevo docente
+        const nuevoDocente = await ModeloDocente.create({
+            nombre: nombre_docente,
+            apellido: apellido_docente,
+            email: email
+        });
+
+        // Preparar la respuesta
+        const response = {
+            id_docente: nuevoDocente.id_docente,
+            nombre_docente: `${nuevoDocente.nombre} ${nuevoDocente.apellido}`,
+            email: nuevoDocente.email
+        };
+
         contenido.tipo = 1;
+        contenido.datos = response;
+        contenido.msj = "Docente guardado correctamente";
+        enviar(200, contenido, res);
+    } catch (error) {
+        contenido.tipo = 0;
+        contenido.msj = "Error en el servidor al guardar el docente";
+        enviar(500, contenido, res);
+        console.log(error);
+    }
+};
+
+exports.editar = async (req, res) => {
+    const { id_docente } = req.query;
+    const { nombre_docente, apellido_docente, email } = req.body;
+    let contenido = {
+        tipo: 0,
+        datos: [],
+        msj: [],
+    };
+    contenido.msj = errores(validationResult(req));
+    if (contenido.msj.length > 0) {
+        return enviar(200, contenido, res);
+    }
+    try {
+        // Buscar el docente por id
+        const docente = await ModeloDocente.findOne({ where: { id_docente } });
+        if (!docente) {
+            return res.status(404).json({ error: 'Docente no encontrado' });
+        }
+
+        // Actualizar el docente
+        docente.nombre = nombre_docente;
+        docente.apellido = apellido_docente;
+        docente.email = email;
+        await docente.save();
+
+        // Preparar la respuesta
+        const response = {
+            id_docente: docente.id_docente,
+            nombre_docente: `${docente.nombre} ${docente.apellido}`,
+            email: docente.email
+        };
+
+        contenido.tipo = 1;
+        contenido.datos = response;
         contenido.msj = "Docente editado correctamente";
         enviar(200, contenido, res);
     } catch (error) {
         contenido.tipo = 0;
         contenido.msj = "Error en el servidor al editar el docente";
         enviar(500, contenido, res);
+        console.log(error);
     }
 };
 
@@ -77,6 +129,7 @@ exports.eliminar = async (req, res) => {
         }
 
         await ModeloDocente.destroy({ where: { id_docente } });
+
         contenido.tipo = 1;
         contenido.msj = "Docente eliminado correctamente";
         enviar(200, contenido, res);
@@ -84,5 +137,43 @@ exports.eliminar = async (req, res) => {
         contenido.tipo = 0;
         contenido.msj = "Error en el servidor al eliminar el docente";
         enviar(500, contenido, res);
+    }
+};
+
+// Filtro para buscar por id de Docente
+exports.busqueda_id = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+        var msjerror = "";
+        validacion.errors.forEach((r) => {
+            msjerror = msjerror + r.msg + ". ";
+        });
+        res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+        try {
+            const busqueda = await ModeloDocente.findOne({ where: { id_docente: req.query.id } });
+            res.json(busqueda);
+        } catch (error) {
+            res.json(error);
+        }
+    }
+};
+
+// Filtro para buscar por nombre del docente
+exports.busqueda_nombre = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+        var msjerror = "";
+        validacion.errors.forEach((r) => {
+            msjerror = msjerror + r.msg + ". ";
+        });
+        res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+        try {
+            const busqueda = await ModeloDocente.findOne({ where: { nombre: req.query.nombre } });
+            res.json(busqueda);
+        } catch (error) {
+            res.json(error);
+        }
     }
 };

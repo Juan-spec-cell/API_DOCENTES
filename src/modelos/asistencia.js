@@ -1,17 +1,17 @@
-const sequelize = require('sequelize');
+const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
 
 const Asistencia = db.define(
-    "asistencia",
+    "Asistencia",
     {
         id_asistencia: {
-            type: sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
             allowNull: false,
         },
         id_estudiante: {
-            type: sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             allowNull: false,
             references: {
                 model: 'estudiantes',
@@ -19,7 +19,7 @@ const Asistencia = db.define(
             }
         },
         id_asignatura: {
-            type: sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             allowNull: false,
             references: {
                 model: 'asignaturas',
@@ -27,11 +27,11 @@ const Asistencia = db.define(
             }
         },
         fecha: {
-            type: sequelize.DATE,
+            type: DataTypes.DATE,
             allowNull: false,
         },
         estado: {
-            type: sequelize.ENUM('Presente', 'Ausente', 'Tardanza'),
+            type: DataTypes.ENUM('Presente', 'Ausente', 'Tardanza'),
             allowNull: false,
         }
     },
@@ -41,7 +41,7 @@ const Asistencia = db.define(
 );
 
 // Definimos las relaciones en este método
-Asistencia.relaciones = (models) => {
+Asistencia.associate = (models) => {
     Asistencia.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante' });
     Asistencia.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura' });
 };

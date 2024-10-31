@@ -1,42 +1,50 @@
 const { Router } = require('express');
 const { body, query } = require('express-validator');
 const controladorAsignatura = require('../controladores/controladorAsignatura');
-const ModeloAsignatura = require('../modelos/asignatura'); // Asegúrate de la ruta correcta
-const rutas = Router();
+const ModeloAsignatura = require('../modelos/asignatura');
+const ModeloDocente = require('../modelos/docente');
+const ModeloCarrera = require('../modelos/carrera');
+const rutas = Router(); // Asegúrate de que esta línea esté presente
 
-
+// Obtener la página de inicio de asignaturas
 rutas.get('/', controladorAsignatura.inicio);
 
+// Listar todas las asignaturas
 rutas.get('/listar', controladorAsignatura.listar);
 
-
+// Guardar una nueva asignatura
 rutas.post('/guardar',
     body("nombre_asignatura")
         .isLength({ min: 3, max: 100 }).withMessage('El nombre de la asignatura debe tener entre 3 y 100 caracteres')
+        .notEmpty().withMessage('El nombre de la asignatura no permite valores nulos')
         .custom(async value => {
-            if (!value) {
-                throw new Error('El nombre de la asignatura no permite valores nulos');
-            } else {
-                const buscarAsignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura: value } });
-                if (buscarAsignatura) {
-                    throw new Error('El nombre de la asignatura ya existe');
-                }
+            const buscarAsignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura: value } });
+            if (buscarAsignatura) {
+                throw new Error('El nombre de la asignatura ya existe');
             }
         }),
-    body("id_docente")
-        .isInt().withMessage('El id del docente debe ser un entero')
+    body("nombre_docente")
+        .notEmpty().withMessage('El nombre del docente no puede estar vacío')
         .custom(async value => {
-            const docenteExistente = await ModeloAsignatura.sequelize.models.docente.findOne({ where: { id_docente: value } });
+            const docenteExistente = await ModeloDocente.findOne({ where: { nombre: value } });
             if (!docenteExistente) {
-                throw new Error('El id del docente no existe');
+                throw new Error('El nombre del docente no existe');
             }
         }),
-    body("id_carrera")
-        .isInt().withMessage('El id de carrera debe ser un entero')
+    body("apellido_docente")
+        .notEmpty().withMessage('El apellido del docente no puede estar vacío')
         .custom(async value => {
-            const carreraExistente = await ModeloAsignatura.sequelize.models.carrera.findOne({ where: { id_carrera: value } });
+            const docenteExistente = await ModeloDocente.findOne({ where: { apellido: value } });
+            if (!docenteExistente) {
+                throw new Error('El apellido del docente no existe');
+            }
+        }),
+    body("nombre_carrera")
+        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío')
+        .custom(async value => {
+            const carreraExistente = await ModeloCarrera.findOne({ where: { nombre_carrera: value } });
             if (!carreraExistente) {
-                throw new Error('El id de carrera no existe');
+                throw new Error('El nombre de la carrera no existe');
             }
         }),
     controladorAsignatura.guardar
@@ -55,28 +63,39 @@ rutas.put('/editar',
     body("nombre_asignatura")
         .optional()
         .isLength({ min: 3, max: 100 }).withMessage('El nombre de la asignatura debe tener entre 3 y 100 caracteres')
-        .custom(async value => {
-            const buscarAsignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura: value } });
-            if (buscarAsignatura) {
-                throw new Error('El nombre de la asignatura ya existe');
+        .custom(async (value, { req }) => {
+            if (value) {
+                const buscarAsignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura: value } });
+                if (buscarAsignatura) {
+                    throw new Error('El nombre de la asignatura ya existe');
+                }
             }
         }),
-    body("id_docente")
+    body("nombre_docente")
         .optional()
-        .isInt().withMessage('El id del docente debe ser un entero')
+        .notEmpty().withMessage('El nombre del docente no puede estar vacío')
         .custom(async value => {
-            const docenteExistente = await ModeloAsignatura.sequelize.models.docente.findOne({ where: { id_docente: value } });
+            const docenteExistente = await ModeloDocente.findOne({ where: { nombre: value } });
             if (!docenteExistente) {
-                throw new Error('El id del docente no existe');
+                throw new Error('El nombre del docente no existe');
             }
         }),
-    body("id_carrera")
+    body("apellido_docente")
         .optional()
-        .isInt().withMessage('El id de carrera debe ser un entero')
+        .notEmpty().withMessage('El apellido del docente no puede estar vacío')
         .custom(async value => {
-            const carreraExistente = await ModeloAsignatura.sequelize.models.carrera.findOne({ where: { id_carrera: value } });
+            const docenteExistente = await ModeloDocente.findOne({ where: { apellido: value } });
+            if (!docenteExistente) {
+                throw new Error('El apellido del docente no existe');
+            }
+        }),
+    body("nombre_carrera")
+        .optional()
+        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío')
+        .custom(async value => {
+            const carreraExistente = await ModeloCarrera.findOne({ where: { nombre_carrera: value } });
             if (!carreraExistente) {
-                throw new Error('El id de carrera no existe');
+                throw new Error('El nombre de la carrera no existe');
             }
         }),
     controladorAsignatura.editar
@@ -101,7 +120,7 @@ module.exports = rutas;
  * @swagger
  * tags:
  *   name: Asignaturas
- *   description: Gestion de Asignaturas
+ *   description: Gestión de Asignaturas
  */
 
 /**
@@ -130,7 +149,7 @@ module.exports = rutas;
  * @swagger
  * /asignaturas/guardar:
  *   post:
- *     summary: Guardar una nueva asignatura
+ *     summary: Crea una nueva asignatura
  *     tags: [Asignaturas]
  *     requestBody:
  *       required: true
@@ -139,20 +158,46 @@ module.exports = rutas;
  *           schema:
  *             type: object
  *             properties:
- *               id_asignatura:
- *                 type: integer
- *                 description: ID de la Asignatura
  *               nombre_asignatura:
  *                 type: string
- *               id_docente:
- *                 type: integer
- *               id_carrera:
- *                 type: integer
+ *                 description: Nombre de la asignatura.
+ *                 example: Matemáticas
+ *               nombre_docente:
+ *                 type: string
+ *                 description: Nombre del docente que imparte la asignatura.
+ *                 example: Juan
+ *               apellido_docente:
+ *                 type: string
+ *                 description: Apellido del docente que imparte la asignatura.
+ *                 example: Pérez
+ *               nombre_carrera:
+ *                 type: string
+ *                 description: Nombre de la carrera a la que pertenece la asignatura.
+ *                 example: Ingeniería en Sistemas
  *     responses:
- *       200:
- *         description: Asignatura guardada exitosamente
+ *       201:
+ *         description: Asignatura creada exitosamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 nombre_asignatura:
+ *                   type: string
+ *                   description: Nombre de la asignatura creada.
+ *                   example: Matemáticas
+ *                 nombre_docente:
+ *                   type: string
+ *                   description: Nombre del docente asignado.
+ *                   example: Juan Pérez
+ *                 nombre_carrera:
+ *                   type: string
+ *                   description: Nombre de la carrera asignada.
+ *                   example: Ingeniería en Sistemas
  *       400:
- *         description: Error en los datos de entrada
+ *         description: Error de validación, el nombre del docente o la carrera no existe.
+ *       500:
+ *         description: Error interno del servidor.
  */
 
 /**
@@ -175,16 +220,18 @@ module.exports = rutas;
  *           schema:
  *             type: object
  *             properties:
- *               id_asignatura:
- *                 type: integer
- *                 description: ID de la Asignatura
  *               nombre_asignatura:
  *                 type: string
  *                 example: "Matemáticas Avanzadas"
- *               id_docente:
- *                 type: integer
- *               id_carrera:
- *                 type: integer
+ *               nombre_docente:
+ *                 type: string
+ *                 example: "Juan"
+ *               apellido_docente:
+ *                 type: string
+ *                 example: "Pérez"
+ *               nombre_carrera:
+ *                 type: string
+ *                 example: "Ingeniería en Sistemas"
  *     responses:
  *       200:
  *         description: Asignatura editada exitosamente

@@ -1,4 +1,5 @@
-const modelo = require('../modelos/actividad'); // Asegúrate de que esta ruta sea correcta
+const ModeloActividad = require('../modelos/actividad'); 
+const ModeloAsignatura = require('../modelos/asignatura'); 
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
 
@@ -15,10 +16,16 @@ exports.guardar = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { id_asignatura, tipo_actividad, fecha } = req.body;
+    const { nombre_asignatura, tipo_actividad, fecha } = req.body;
     try {
-        const nuevaActividad = await modelo.create({
-            id_asignatura: id_asignatura,
+        // Buscar la asignatura por nombre
+        const asignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura } });
+        if (!asignatura) {
+            return res.status(404).json({ error: 'Asignatura no encontrada' });
+        }
+
+        const nuevaActividad = await ModeloActividad.create({
+            id_asignatura: asignatura.id_asignatura,
             tipo_actividad: tipo_actividad,
             fecha: fecha
         });
@@ -41,77 +48,78 @@ exports.listar = async (req, res) => {
         msj: [],
     };
     try {
-        const data = await modelo.findAll();
+        const data = await ModeloActividad.findAll({
+            include: [
+                {
+                    model: ModeloAsignatura,
+                    attributes: ['nombre_asignatura']
+                }
+            ]
+        });
+
         contenido.tipo = 1;
-        contenido.datos = data;
+        contenido.datos = data.map(actividad => ({
+            nombre_actividad: actividad.tipo_actividad,
+            nombre_asignatura: actividad.Asignatura ? actividad.Asignatura.nombre_asignatura : null,
+            fecha: actividad.fecha,
+            createdAt: actividad.createdAt,
+            updatedAt: actividad.updatedAt
+        }));
         enviar(200, contenido, res);
     } catch (error) {
         contenido.tipo = 0;
         contenido.msj = "Error al cargar los datos de actividades";
         enviar(500, contenido, res);
+        console.log(error);
     }
 };
 
-// Asegúrate de que la función enviar esté definida en algún lugar de tu código
 function enviar(status, contenido, res) {
     res.status(status).json(contenido);
 }
 
 exports.editar = async (req, res) => {
     const { id } = req.query;
-    const { id_asignatura, tipo_actividad, fecha } = req.body;
+    const { tipo_actividad, fecha } = req.body; // Solo se actualizan estos campos
+
     try {
-        var buscar_actividad = await modelo.findOne({ where: { id_actividad: id } });
-        if (!buscar_actividad) {
-            res.json({ msj: "El id no existe" });
-        } else {
-            buscar_actividad.id_asignatura = id_asignatura;
-            buscar_actividad.tipo_actividad = tipo_actividad;
-            buscar_actividad.fecha = fecha;
-            await buscar_actividad.save()
-                .then((data) => {
-                    res.json(data);
-                }).catch((er) => {
-                    res.json(er);
-                });
+        const buscarActividad = await ModeloActividad.findOne({ where: { id_actividad: id } });
+        if (!buscarActividad) {
+            return res.status(404).json({ error: 'Actividad no encontrada' });
         }
+
+        // Actualiza solo los campos permitidos
+        if (tipo_actividad) {
+            buscarActividad.tipo_actividad = tipo_actividad;
+        }
+        if (fecha) {
+            buscarActividad.fecha = fecha;
+        }
+
+        await buscarActividad.save();
+        res.status(200).json({ message: "Actividad actualizada", data: buscarActividad });
     } catch (error) {
-        console.log(error);
-        res.json({ msj: "Error en el servidor" });
+        res.status(500).json({ message: "Error al editar la actividad", error: error.message });
     }
 };
+
 
 exports.eliminar = async (req, res) => {
     const { id } = req.query;
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-        var msjerror = "";
-        validacion.errors.forEach(r => {
-            msjerror = msjerror + r.msg + ". ";
-        });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            var busqueda = await modelo.findOne({ where: { id_actividad: id } });
-            console.log(busqueda);
-            if (!busqueda) {
-                res.json({ msj: "El id no existe" });
-            } else {
-                await modelo.destroy({ where: { id_actividad: id } })
-                    .then((data) => {
-                        res.json({ msj: "Registro eliminado", data: data });
-                    })
-                    .catch((er) => {
-                        res.json(er);
-                    });
-            }
-        } catch (error) {
-            res.json(error);
+    
+    try {
+        const busqueda = await ModeloActividad.findOne({ where: { id_actividad: id } });
+        if (!busqueda) {
+            return res.status(404).json({ error: "El id no existe" });
         }
+
+        await ModeloActividad.destroy({ where: { id_actividad: id } });
+        res.status(200).json({ message: "Registro eliminado" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar la actividad", error: error.message });
     }
 };
 
-//filtros
 exports.busqueda = async (req, res) => {
     const validacion = validationResult(req);
     if (validacion.errors.length > 0) {
@@ -119,17 +127,18 @@ exports.busqueda = async (req, res) => {
         validacion.errors.forEach(r => {
             msjerror = msjerror + r.msg + ". ";
         });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            const whereClause = {};
-            if (req.query.id) whereClause.id_actividad = req.query.id;
-            if (req.query.tipo) whereClause.tipo_actividad = req.query.tipo;
-            const busqueda = await modelo.findAll({ where: { [Op.or]: whereClause } });
-            res.json(busqueda);
-        } catch (error) {
-            res.json(error);
-        }
+        return res.json({ msj: "Hay errores en la petición", error: msjerror });
+    }
+
+    try {
+        const whereClause = {};
+        if (req.query.id) whereClause.id_actividad = req.query.id;
+        if (req.query.tipo) whereClause.tipo_actividad = req.query.tipo;
+        
+        const busqueda = await ModeloActividad.findAll({ where: { [Op.or]: whereClause } });
+        res.json(busqueda);
+    } catch (error) {
+        res.status(500).json(error);
     }
 };
 
@@ -140,17 +149,17 @@ exports.busqueda_id = async (req, res) => {
         validacion.errors.forEach(r => {
             msjerror = msjerror + r.msg + ". ";
         });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            const busqueda = await modelo.findOne({ where: { id_actividad: req.query.id } });
-            res.json(busqueda);
-        } catch (error) {
-            res.json(error);
-        }
+        return res.json({ msj: "Hay errores en la petición", error: msjerror });
+    }
+
+    try {
+        const busqueda = await ModeloActividad.findOne({ where: { id_actividad: req.query.id } });
+        res.json(busqueda);
+    } catch (error) {
+        res.status(500).json(error);
     }
 };
 
 exports.buscarPorId = async (id) => {
-    return await modelo.findOne({ where: { id_actividad: id } });
+    return await ModeloActividad.findOne({ where: { id_actividad: id } });
 };

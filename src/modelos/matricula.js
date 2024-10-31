@@ -1,17 +1,17 @@
-const sequelize = require('sequelize');  // Importa Sequelize
-const db = require('../configuracion/db'); // Importa la configuración de la base de datos
+const { DataTypes } = require('sequelize');
+const db = require('../configuracion/db');
 
 const Matricula = db.define(
-    "matricula",
+    "Matricula",
     {
         id_matricula: {
-            type: sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
             allowNull: false,
         },
         id_estudiante: {
-            type: sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             allowNull: false,
             references: {
                 model: 'estudiantes',
@@ -19,7 +19,7 @@ const Matricula = db.define(
             }
         },
         id_periodo: {
-            type: sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             allowNull: false,
             references: {
                 model: 'periodos',
@@ -33,7 +33,7 @@ const Matricula = db.define(
 );
 
 // Definir las relaciones
-Matricula.relaciones = (models) => {
+Matricula.associate = (models) => {
     Matricula.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante' });
     Matricula.belongsTo(models.Periodo, { foreignKey: 'id_periodo' });
 };

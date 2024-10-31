@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { body, query } = require('express-validator');
-const controladorActividad = require('../controladores/controladorActividad'); // Asegúrate de que este controlador existe
+const controladorActividad = require('../controladores/controladorActividad'); 
 const rutas = Router();
 
 /**
@@ -32,12 +32,12 @@ const rutas = Router();
  *                   items:
  *                     type: object
  *                     properties:
- *                       id_actividad:
- *                         type: integer
- *                         description: ID de la actividad.
- *                       id_asignatura:
- *                         type: integer
- *                         description: ID de la asignatura.
+ *                       nombre_actividad:
+ *                         type: string
+ *                         description: Nombre de la actividad.
+ *                       nombre_asignatura:
+ *                         type: string
+ *                         description: Nombre de la asignatura.
  *                       tipo_actividad:
  *                         type: string
  *                         enum: [Acumulativo, Examen]
@@ -46,6 +46,14 @@ const rutas = Router();
  *                         type: string
  *                         format: date
  *                         description: Fecha de la actividad.
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Fecha de creación de la actividad.
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Fecha de última actualización de la actividad.
  *                 msj:
  *                   type: array
  *                   items:
@@ -68,9 +76,9 @@ rutas.get('/listar', controladorActividad.listar);
  *           schema:
  *             type: object
  *             properties:
- *               id_asignatura:
- *                 type: integer
- *                 description: ID de la asignatura
+ *               nombre_asignatura:
+ *                 type: string
+ *                 description: Nombre de la asignatura
  *               tipo_actividad:
  *                 type: string
  *                 enum: [Acumulativo, Examen]
@@ -86,7 +94,7 @@ rutas.get('/listar', controladorActividad.listar);
  *         description: Error en los datos proporcionados
  */
 rutas.post('/guardar',
-    body("id_asignatura").notEmpty().withMessage('Ingrese un valor en el ID de la asignatura'),
+    body("nombre_asignatura").notEmpty().withMessage('Ingrese un valor en el nombre de la asignatura'),
     body("tipo_actividad").notEmpty().withMessage('Ingrese un valor en el tipo de actividad'),
     body("fecha").notEmpty().withMessage('Ingrese una fecha para la actividad'),
     controladorActividad.guardar
@@ -112,9 +120,9 @@ rutas.post('/guardar',
  *           schema:
  *             type: object
  *             properties:
- *               id_asignatura:
- *                 type: integer
- *                 description: ID de la asignatura (opcional)
+ *               nombre_asignatura:
+ *                 type: string
+ *                 description: Nombre de la asignatura (opcional)
  *               tipo_actividad:
  *                 type: string
  *                 enum: [Acumulativo, Examen]
@@ -142,7 +150,7 @@ rutas.put('/editar',
                 }
             }
         }),
-    body("id_asignatura").optional().isInt().withMessage('El ID de la asignatura debe ser un entero'),
+    body("nombre_asignatura").optional().isString().withMessage('El nombre de la asignatura debe ser una cadena de texto'),
     body("tipo_actividad").optional().isString().withMessage('El tipo de actividad debe ser una cadena de texto'),
     body("fecha").optional().isString().withMessage('La fecha debe ser una cadena de texto'),
     controladorActividad.editar

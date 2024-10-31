@@ -1,25 +1,25 @@
-const sequelize = require('sequelize');
+const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
 
 const Periodo = db.define(
-    "periodo",
+    "Periodo",
     {
         id_periodo: {
-            type: sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
             allowNull: false,
         },
         nombre_periodo: {
-            type: sequelize.STRING(100),
+            type: DataTypes.STRING(100),
             allowNull: false,
         },
         fecha_inicio: {
-            type: sequelize.DATE,
+            type: DataTypes.DATE,
             allowNull: false,
         },
         fecha_fin: {
-            type: sequelize.DATE,
+            type: DataTypes.DATE,
             allowNull: false,
         }
     },
@@ -29,7 +29,7 @@ const Periodo = db.define(
 );
 
 // Definimos las relaciones en este método
-Periodo.relaciones = (models) => {
+Periodo.associate = (models) => {
     Periodo.hasMany(models.Matricula, { foreignKey: 'id_periodo' });
 };
 

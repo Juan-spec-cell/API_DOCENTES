@@ -27,11 +27,45 @@ rutas.get('/', controladorEstudiante.inicio);
  * @swagger
  * /estudiantes/listar:
  *   get:
- *     summary: Lista todos los estudiantes
+ *     summary: Lista todos los Estudiantes
  *     tags: [Estudiantes]
  *     responses:
  *       200:
- *         description: Lista de estudiantes
+ *         description: Lista de Estudiantes.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                   description: Tipo de respuesta, donde 0 indica error y 1 indica éxito.
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id_estudiante:
+ *                         type: integer
+ *                         description: ID del estudiante.
+ *                       nombre_estudiante:
+ *                         type: string
+ *                         description: Nombre del estudiante.
+ *                       apellido_estudiante:
+ *                         type: string
+ *                         description: Apellido del estudiante.
+ *                       email:
+ *                         type: string
+ *                         description: Email del estudiante.
+ *                       nombre_carrera:
+ *                         type: string
+ *                         description: Nombre de la carrera.
+ *                 msj:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       500:
+ *         description: Error al cargar los datos de Estudiantes.
  */
 rutas.get('/listar', controladorEstudiante.listar);
 
@@ -48,38 +82,66 @@ rutas.get('/listar', controladorEstudiante.listar);
  *           schema:
  *             type: object
  *             properties:
- *               id_estudiante:
- *                 type: integer
- *                 description: ID del Estudiante
  *               nombre_estudiante:
  *                 type: string
- *                 description: Nombre del Estudiante
+ *                 description: Nombre del estudiante.
+ *               apellido_estudiante:
+ *                 type: string
+ *                 description: Apellido del estudiante.
  *               email:
  *                 type: string
- *                 description: Correo del Estudiante
- *               id_carrera:
- *                 type: integer
- *                 description: ID de la Carrera
+ *                 description: Email del estudiante.
+ *               nombre_carrera:
+ *                 type: string
+ *                 description: Nombre de la carrera.
  *     responses:
  *       200:
- *         description: Estudiante guardado
+ *         description: Estudiante guardado correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: object
+ *                   properties:
+ *                     id_estudiante:
+ *                       type: integer
+ *                       description: ID del estudiante.
+ *                     nombre_estudiante:
+ *                       type: string
+ *                       description: Nombre del estudiante.
+ *                     apellido_estudiante:
+ *                       type: string
+ *                       description: Apellido del estudiante.
+ *                     email:
+ *                       type: string
+ *                       description: Email del estudiante.
+ *                     nombre_carrera:
+ *                       type: string
+ *                       description: Nombre de la carrera.
+ *                 msj:
+ *                   type: string
  *       400:
- *         description: Error en los datos proporcionados
+ *         description: Error en la validación de datos.
+ *       500:
+ *         description: Error en el servidor al guardar el estudiante.
  */
 rutas.post('/guardar',
-    body("id_estudiante").isInt().withMessage('El id del estudiante debe ser un entero'),
     body("nombre_estudiante")
-        .isString().withMessage('El nombre debe ser una cadena de texto')
-        .notEmpty().withMessage('El nombre no permite valores nulos'),
+        .isString().withMessage('El nombre del estudiante debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre del estudiante no puede estar vacío'),
+    body("apellido_estudiante")
+        .isString().withMessage('El apellido del estudiante debe ser una cadena de texto')
+        .notEmpty().withMessage('El apellido del estudiante no puede estar vacío'),
     body("email")
-        .isEmail().withMessage('Debe ser un correo electrónico válido')
-        .custom(async value => {
-            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { email: value } });
-            if (buscarEstudiante) {
-                throw new Error('El correo ya está registrado');
-            }
-        }),
-    body("id_carrera").isInt().withMessage('El id de la carrera debe ser un entero'),
+        .isEmail().withMessage('El email debe ser una dirección de correo válida')
+        .notEmpty().withMessage('El email no puede estar vacío'),
+    body("nombre_carrera")
+        .isString().withMessage('El nombre de la carrera debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío'),
     controladorEstudiante.guardar
 );
 
@@ -95,7 +157,7 @@ rutas.post('/guardar',
  *         required: true
  *         schema:
  *           type: integer
- *           description: ID del estudiante a editar
+ *         description: ID del Estudiante a editar.
  *     requestBody:
  *       required: true
  *       content:
@@ -105,35 +167,72 @@ rutas.post('/guardar',
  *             properties:
  *               nombre_estudiante:
  *                 type: string
- *                 description: Nombre del Estudiante
+ *                 description: Nombre del estudiante.
+ *               apellido_estudiante:
+ *                 type: string
+ *                 description: Apellido del estudiante.
  *               email:
  *                 type: string
- *                 description: Correo del Estudiante
- *               id_carrera:
- *                 type: integer
- *                 description: ID de la Carrera
+ *                 description: Email del estudiante.
+ *               nombre_carrera:
+ *                 type: string
+ *                 description: Nombre de la carrera.
  *     responses:
  *       200:
- *         description: Estudiante editado
+ *         description: Estudiante editado correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: object
+ *                   properties:
+ *                     id_estudiante:
+ *                       type: integer
+ *                       description: ID del estudiante.
+ *                     nombre_estudiante:
+ *                       type: string
+ *                       description: Nombre del estudiante.
+ *                     apellido_estudiante:
+ *                       type: string
+ *                       description: Apellido del estudiante.
+ *                     email:
+ *                       type: string
+ *                       description: Email del estudiante.
+ *                     nombre_carrera:
+ *                       type: string
+ *                       description: Nombre de la carrera.
+ *                 msj:
+ *                   type: string
  *       400:
- *         description: Error en los datos proporcionados
+ *         description: Error en la validación de datos.
+ *       500:
+ *         description: Error en el servidor al editar el estudiante.
  */
 rutas.put('/editar',
-    query("id_estudiante").isInt().withMessage('El id del estudiante debe ser un entero'),
-    body("nombre_estudiante")
-        .optional()
-        .isString().withMessage('El nombre debe ser una cadena de texto')
-        .notEmpty().withMessage('El nombre no permite valores nulos'),
-    body("email")
-        .optional()
-        .isEmail().withMessage('Debe ser un correo electrónico válido')
+    query("id_estudiante")
+        .isInt().withMessage("El id del estudiante debe ser un entero")
         .custom(async value => {
-            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { email: value } });
-            if (buscarEstudiante) {
-                throw new Error('El correo ya está registrado');
+            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id_estudiante: value } });
+            if (!buscarEstudiante) {
+                throw new Error('El id del estudiante no existe');
             }
         }),
-    body("id_carrera").optional().isInt().withMessage('El id de la carrera debe ser un entero'),
+    body("nombre_estudiante")
+        .isString().withMessage('El nombre del estudiante debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre del estudiante no puede estar vacío'),
+    body("apellido_estudiante")
+        .isString().withMessage('El apellido del estudiante debe ser una cadena de texto')
+        .notEmpty().withMessage('El apellido del estudiante no puede estar vacío'),
+    body("email")
+        .isEmail().withMessage('El email debe ser una dirección de correo válida')
+        .notEmpty().withMessage('El email no puede estar vacío'),
+    body("nombre_carrera")
+        .isString().withMessage('El nombre de la carrera debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío'),
     controladorEstudiante.editar
 );
 

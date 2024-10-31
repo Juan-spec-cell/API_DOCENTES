@@ -59,9 +59,10 @@ rutas.get('/', controladorUsuario.inicio);
  *                       contraseña_usuario:
  *                         type: string
  *                         description: Contraseña del usuario.
- *                       rolId:
- *                         type: integer
- *                         description: ID del rol.
+ *                       tipoUsuario:
+ *                         type: string
+ *                         enum: [Estudiante, Docente]
+ *                         description: Tipo de usuario.
  *                 msj:
  *                   type: array
  *                   items:
@@ -96,9 +97,10 @@ rutas.get('/listar', controladorUsuario.listar);
  *               contraseña_usuario:
  *                 type: string
  *                 description: Contraseña del usuario
- *               rolId:
- *                 type: integer
- *                 description: ID del rol
+ *               tipoUsuario:
+ *                 type: string
+ *                 enum: [Estudiante, Docente]
+ *                 description: Tipo de usuario
  *     responses:
  *       200:
  *         description: Usuario guardado
@@ -110,7 +112,8 @@ rutas.post('/guardar',
     body("apellido_usuario").isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
     body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
     body("contraseña_usuario").isString().withMessage('La contraseña no puede estar vacía'),
-    body("rolId").isInt().withMessage('El ID del rol debe ser un entero'),
+    body("tipoUsuario").customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
+        .isIn(['Estudiante', 'Docente']).withMessage('El tipo de usuario debe ser "Estudiante" o "Docente"'),
     controladorUsuario.guardar
 );
 
@@ -146,9 +149,10 @@ rutas.post('/guardar',
  *               contraseña_usuario:
  *                 type: string
  *                 description: Contraseña del usuario (opcional)
- *               rolId:
- *                 type: integer
- *                 description: ID del rol (opcional)
+ *               tipoUsuario:
+ *                 type: string
+ *                 enum: [Estudiante, Docente]
+ *                 description: Tipo de usuario (opcional)
  *     responses:
  *       200:
  *         description: Usuario editado
@@ -172,7 +176,8 @@ rutas.put('/editar',
     body("apellido_usuario").optional().isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
     body("email").optional().isEmail().withMessage('El correo electrónico debe ser válido'),
     body("contraseña_usuario").optional().isString().withMessage('La contraseña no puede estar vacía'),
-    body("rolId").optional().isInt().withMessage('El ID del rol debe ser un entero'),
+    body("tipoUsuario").optional().customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
+        .isIn(['Estudiante', 'Docente']).withMessage('El tipo de usuario debe ser "Estudiante" o "Docente"'),
     controladorUsuario.editar
 );
 
@@ -240,6 +245,80 @@ rutas.delete('/eliminar',
 rutas.post('/recuperar',
     body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
     controladorUsuario.recuperarContrasena
+);
+
+/**
+ * @swagger
+ * /usuarios/actualizarContrasena:
+ *   post:
+ *     summary: Actualiza la contraseña de un usuario
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Correo electrónico del usuario
+ *               contrasena:
+ *                 type: string
+ *                 description: Nueva contraseña del usuario
+ *               pin:
+ *                 type: string
+ *                 description: PIN de recuperación
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada correctamente
+ *       400:
+ *         description: Error en los datos proporcionados
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al actualizar el usuario
+ */
+rutas.post('/actualizar/contrasena',
+    body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
+    body("contrasena").isString().withMessage('La contraseña no puede estar vacía'),
+    body("pin").isLength({ min: 6, max: 6 }).isHexadecimal().withMessage('El pin contiene un valor incorrecto'),
+    controladorUsuario.actualizarContrasena
+);
+
+/**
+ * @swagger
+ * /usuarios/iniciarSesion:
+ *   post:
+ *     summary: Inicia sesión de un usuario
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               login:
+ *                 type: string
+ *                 description: Correo electrónico o nombre de usuario
+ *               contrasena:
+ *                 type: string
+ *                 description: Contraseña del usuario
+ *     responses:
+ *       200:
+ *         description: Sesión iniciada correctamente
+ *       400:
+ *         description: Error en los datos proporcionados
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al iniciar sesión
+ */
+rutas.post('/iniciarSesion',
+    body("login").isString().withMessage('El login debe ser una cadena de texto'),
+    body("contrasena").isString().withMessage('La contraseña no puede estar vacía'),
+    controladorUsuario.iniciarSesion
 );
 
 module.exports = rutas;
