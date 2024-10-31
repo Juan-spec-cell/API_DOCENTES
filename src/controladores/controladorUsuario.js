@@ -97,6 +97,7 @@ exports.eliminar = async (req, res) => {
         await usuario.destroy();
         res.json({ message: "Usuario eliminado con éxito" });
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: "Error al eliminar el usuario", error: error.message });
     }
 };
