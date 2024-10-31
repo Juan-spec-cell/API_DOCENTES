@@ -2,9 +2,9 @@ const { Router } = require('express');
 const { body, query } = require('express-validator');
 const controladorAsignatura = require('../controladores/controladorAsignatura');
 const ModeloAsignatura = require('../modelos/asignatura');
-const ModeloDocente = require('../modelos/docente'); // Asegúrate de la ruta correcta
-const ModeloCarrera = require('../modelos/carrera'); // Asegúrate de la ruta correcta
-const rutas = Router();
+const ModeloDocente = require('../modelos/docente');
+const ModeloCarrera = require('../modelos/carrera');
+const rutas = Router(); // Asegúrate de que esta línea esté presente
 
 // Obtener la página de inicio de asignaturas
 rutas.get('/', controladorAsignatura.inicio);
@@ -26,15 +26,23 @@ rutas.post('/guardar',
     body("nombre_docente")
         .notEmpty().withMessage('El nombre del docente no puede estar vacío')
         .custom(async value => {
-            const docenteExistente = await ModeloDocente.findOne({ where: { nombre: value } }); // Asumiendo que el modelo de docente tiene una propiedad 'nombre'
+            const docenteExistente = await ModeloDocente.findOne({ where: { nombre: value } });
             if (!docenteExistente) {
                 throw new Error('El nombre del docente no existe');
+            }
+        }),
+    body("apellido_docente")
+        .notEmpty().withMessage('El apellido del docente no puede estar vacío')
+        .custom(async value => {
+            const docenteExistente = await ModeloDocente.findOne({ where: { apellido: value } });
+            if (!docenteExistente) {
+                throw new Error('El apellido del docente no existe');
             }
         }),
     body("nombre_carrera")
         .notEmpty().withMessage('El nombre de la carrera no puede estar vacío')
         .custom(async value => {
-            const carreraExistente = await ModeloCarrera.findOne({ where: { nombre: value } }); // Asumiendo que el modelo de carrera tiene una propiedad 'nombre'
+            const carreraExistente = await ModeloCarrera.findOne({ where: { nombre_carrera: value } });
             if (!carreraExistente) {
                 throw new Error('El nombre de la carrera no existe');
             }
@@ -72,11 +80,20 @@ rutas.put('/editar',
                 throw new Error('El nombre del docente no existe');
             }
         }),
+    body("apellido_docente")
+        .optional()
+        .notEmpty().withMessage('El apellido del docente no puede estar vacío')
+        .custom(async value => {
+            const docenteExistente = await ModeloDocente.findOne({ where: { apellido: value } });
+            if (!docenteExistente) {
+                throw new Error('El apellido del docente no existe');
+            }
+        }),
     body("nombre_carrera")
         .optional()
         .notEmpty().withMessage('El nombre de la carrera no puede estar vacío')
         .custom(async value => {
-            const carreraExistente = await ModeloCarrera.findOne({ where: { nombre: value } });
+            const carreraExistente = await ModeloCarrera.findOne({ where: { nombre_carrera: value } });
             if (!carreraExistente) {
                 throw new Error('El nombre de la carrera no existe');
             }
@@ -98,8 +115,6 @@ rutas.delete('/eliminar',
 );
 
 module.exports = rutas;
-
-
 
 /**
  * @swagger
@@ -150,7 +165,11 @@ module.exports = rutas;
  *               nombre_docente:
  *                 type: string
  *                 description: Nombre del docente que imparte la asignatura.
- *                 example: Juan Pérez
+ *                 example: Juan
+ *               apellido_docente:
+ *                 type: string
+ *                 description: Apellido del docente que imparte la asignatura.
+ *                 example: Pérez
  *               nombre_carrera:
  *                 type: string
  *                 description: Nombre de la carrera a la que pertenece la asignatura.
@@ -181,7 +200,6 @@ module.exports = rutas;
  *         description: Error interno del servidor.
  */
 
-
 /**
  * @swagger
  * /asignaturas/editar:
@@ -205,10 +223,15 @@ module.exports = rutas;
  *               nombre_asignatura:
  *                 type: string
  *                 example: "Matemáticas Avanzadas"
- *               id_docente:
- *                 type: integer
- *               id_carrera:
- *                 type: integer
+ *               nombre_docente:
+ *                 type: string
+ *                 example: "Juan"
+ *               apellido_docente:
+ *                 type: string
+ *                 example: "Pérez"
+ *               nombre_carrera:
+ *                 type: string
+ *                 example: "Ingeniería en Sistemas"
  *     responses:
  *       200:
  *         description: Asignatura editada exitosamente

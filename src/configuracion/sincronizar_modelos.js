@@ -1,5 +1,4 @@
-const dbconnect = require('../configuracion/db'); 
-
+const sequelize = require('../configuracion/db');
 const ModeloCarrera = require('../modelos/carrera');
 const ModeloDocente = require('../modelos/docente');
 const ModeloEstudiante = require('../modelos/estudiante');
@@ -9,18 +8,7 @@ const ModeloAsistencia = require('../modelos/asistencia');
 const ModeloPeriodo = require('../modelos/periodo');
 const ModeloMatricula = require('../modelos/matricula');
 const ModeloActividad = require('../modelos/actividad');
-const ModeloUsuarios = require('../modelos/usuario'); // Corregido: Asegúrate de que esta ruta sea correcta
-const ModeloRoles = require('../modelos/roles');
-
-// Definir las relaciones para el modelo de usuario
-ModeloUsuarios.relaciones = function(modelos) {
-    this.belongsTo(modelos.Roles, { foreignKey: 'rolId', as: 'rol' });
-};
-
-// Definir las relaciones para el modelo de roles
-ModeloRoles.relaciones = function(modelos) {
-    this.hasMany(modelos.Usuarios, { foreignKey: 'rolId', as: 'usuarios' });
-};
+const ModeloUsuarios = require('../modelos/usuario');
 
 // Definición de relaciones entre los modelos
 const modelos = {
@@ -34,27 +22,28 @@ const modelos = {
     Periodo: ModeloPeriodo,
     Actividad: ModeloActividad,
     Usuarios: ModeloUsuarios,
-    Roles: ModeloRoles,
 };
 
 // Establecer las relaciones llamando al método en cada modelo
 Object.values(modelos).forEach(modelo => {
-    if (modelo.relaciones) {
-        modelo.relaciones(modelos);
+    if (modelo.associate) {
+        modelo.associate(modelos);
     }
 });
 
 async function sincronizarModelos() {
     try {
-        // Sincroniza primero el modelo de Usuarios y Roles
-        await modelos.Roles.sync();
+        // Sincroniza los modelos en el orden correcto
         await modelos.Usuarios.sync();
-
-        // Sincroniza el modelo de Periodo antes de Matricula
         await modelos.Periodo.sync();
-
-        // Luego, sincroniza el resto de los modelos
-        await Promise.all(Object.values(modelos).filter(modelo => modelo !== modelos.Usuarios && modelo !== modelos.Roles && modelo !== modelos.Periodo).map(modelo => modelo.sync()));
+        await modelos.Carrera.sync();
+        await modelos.Docente.sync();
+        await modelos.Estudiante.sync();
+        await modelos.Asignatura.sync();
+        await modelos.Calificacion.sync();
+        await modelos.Asistencia.sync();
+        await modelos.Matricula.sync();
+        await modelos.Actividad.sync();
 
         console.log("Todos los modelos fueron sincronizados correctamente");
     } catch (error) {

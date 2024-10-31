@@ -10,6 +10,7 @@ const rutas = Router();
  *   description: Gestión de calificaciones
  */
 
+
 /**
  * @swagger
  * /calificaciones/listar:
@@ -35,12 +36,15 @@ const rutas = Router();
  *                       id_calificacion:
  *                         type: integer
  *                         description: ID de la calificación.
- *                       id_estudiante:
- *                         type: integer
- *                         description: ID del estudiante.
- *                       id_asignatura:
- *                         type: integer
- *                         description: ID de la asignatura.
+ *                       nombre_estudiante:
+ *                         type: string
+ *                         description: Nombre del estudiante.
+ *                       apellido_estudiante:
+ *                         type: string
+ *                         description: Apellido del estudiante.
+ *                       nombre_asignatura:
+ *                         type: string
+ *                         description: Nombre de la asignatura.
  *                       nota:
  *                         type: float
  *                         description: Nota de la calificación.
@@ -66,28 +70,67 @@ rutas.get('/listar', controladorCalificacion.listar);
  *           schema:
  *             type: object
  *             properties:
- *               id_estudiante:
- *                 type: integer
- *                 description: ID del estudiante
- *               id_asignatura:
- *                 type: integer
- *                 description: ID de la asignatura
+ *               nombre_estudiante:
+ *                 type: string
+ *                 description: Nombre del estudiante
+ *               apellido_estudiante:
+ *                 type: string
+ *                 description: Apellido del estudiante
+ *               nombre_asignatura:
+ *                 type: string
+ *                 description: Nombre de la asignatura
  *               nota:
- *                 type: float
+ *                 type: number
+ *                 format: float
  *                 description: Nota de la calificación
  *     responses:
  *       200:
  *         description: Calificación guardada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id_calificacion:
+ *                       type: integer
+ *                       description: ID de la calificación.
+ *                     nombre_estudiante:
+ *                       type: string
+ *                       description: Nombre del estudiante.
+ *                     apellido_estudiante:
+ *                       type: string
+ *                       description: Apellido del estudiante.
+ *                     nombre_asignatura:
+ *                       type: string
+ *                       description: Nombre de la asignatura.
+ *                     nota:
+ *                       type: float
+ *                       description: Nota de la calificación.
  *       400:
  *         description: Error en los datos proporcionados
+ *       500:
+ *         description: Error en el servidor al guardar la calificación
  */
 rutas.post('/guardar',
-    body("id_estudiante").notEmpty().withMessage('Ingrese un valor en el ID del estudiante'),
-    body("id_asignatura").notEmpty().withMessage('Ingrese un valor en el ID de la asignatura'),
-    body("nota").notEmpty().withMessage('Ingrese una nota para la calificación'),
+    body("nombre_estudiante")
+        .isString().withMessage('El nombre del estudiante debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre del estudiante no puede estar vacío'),
+    body("apellido_estudiante")
+        .isString().withMessage('El apellido del estudiante debe ser una cadena de texto')
+        .notEmpty().withMessage('El apellido del estudiante no puede estar vacío'),
+    body("nombre_asignatura")
+        .isString().withMessage('El nombre de la asignatura debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre de la asignatura no puede estar vacío'),
+    body("nota")
+        .isFloat().withMessage('La nota debe ser un número flotante')
+        .notEmpty().withMessage('Ingrese una nota para la calificación'),
     controladorCalificacion.guardar
 );
-
 /**
  * @swagger
  * /calificaciones/editar:
@@ -102,26 +145,67 @@ rutas.post('/guardar',
  *           type: integer
  *           description: ID de la calificación a editar
  *     requestBody:
- *       required: false
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
  *             properties:
- *               id_estudiante:
- *                 type: integer
- *                 description: ID del estudiante (opcional)
- *               id_asignatura:
- *                 type: integer
- *                 description: ID de la asignatura (opcional)
+ *               nombre_estudiante:
+ *                 type: string
+ *                 description: Nombre del estudiante (requerido)
+ *               apellido_estudiante:
+ *                 type: string
+ *                 description: Apellido del estudiante (requerido)
+ *               nombre_asignatura:
+ *                 type: string
+ *                 description: Nombre de la asignatura (requerido)
  *               nota:
  *                 type: float
- *                 description: Nota de la calificación (opcional)
+ *                 description: Nota de la calificación (requerido)
  *     responses:
  *       200:
- *         description: Calificación editada
+ *         description: Calificación editada correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id_calificacion:
+ *                   type: integer
+ *                 nombre_estudiante:
+ *                   type: string
+ *                 nombre_asignatura:
+ *                   type: string
+ *                 nota:
+ *                   type: Float
  *       400:
  *         description: Error en los datos proporcionados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       404:
+ *         description: Calificación, estudiante o asignatura no encontrados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Error en el servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
  */
 rutas.put('/editar',
     query("id")
@@ -136,11 +220,21 @@ rutas.put('/editar',
                 }
             }
         }),
-    body("id_estudiante").optional().isInt().withMessage('El ID del estudiante debe ser un entero'),
-    body("id_asignatura").optional().isInt().withMessage('El ID de la asignatura debe ser un entero'),
-    body("nota").optional().isFloat().withMessage('La nota debe ser un número decimal'),
+    body("nombre_estudiante")
+        .notEmpty().withMessage('El nombre del estudiante es obligatorio')
+        .isString().withMessage('El nombre del estudiante debe ser un texto'),
+    body("apellido_estudiante")
+        .notEmpty().withMessage('El apellido del estudiante es obligatorio')
+        .isString().withMessage('El apellido del estudiante debe ser un texto'),
+    body("nombre_asignatura")
+        .notEmpty().withMessage('El nombre de la asignatura es obligatorio')
+        .isString().withMessage('El nombre de la asignatura debe ser un texto'),
+    body("nota")
+        .notEmpty().withMessage('La nota es obligatoria')
+        .isFloat().withMessage('La nota debe ser un número decimal'),
     controladorCalificacion.editar
 );
+
 
 /**
  * @swagger

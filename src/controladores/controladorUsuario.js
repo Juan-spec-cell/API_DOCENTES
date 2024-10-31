@@ -20,16 +20,16 @@ exports.guardar = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    let { nombre_usuario, apellido_usuario, email, contraseña_usuario, nombre_rol } = req.body;
-    nombre_rol = nombre_rol.trim().toLowerCase();
-    if (nombre_rol === "docente" || nombre_rol === "estudiante") {
-        nombre_rol = nombre_rol.charAt(0).toUpperCase() + nombre_rol.slice(1);
+    let { nombre_usuario, apellido_usuario, email, contraseña_usuario, tipoUsuario } = req.body;
+    tipoUsuario = tipoUsuario.trim().toLowerCase();
+    if (tipoUsuario === "docente" || tipoUsuario === "estudiante") {
+        tipoUsuario = tipoUsuario.charAt(0).toUpperCase() + tipoUsuario.slice(1);
     } else {
-        return res.status(400).json({ message: "El rol debe ser 'Docente' o 'Estudiante'." });
+        return res.status(400).json({ message: "El tipo de usuario debe ser 'Docente' o 'Estudiante'." });
     }
 
     try {
-        const nuevoUsuario = await Usuarios.create({ nombre_usuario, apellido_usuario, email, contraseña_usuario, nombre_rol });
+        const nuevoUsuario = await Usuarios.create({ nombre_usuario, apellido_usuario, email, contraseña_usuario, tipoUsuario });
         res.status(201).json({ message: "Usuario guardado con éxito", data: nuevoUsuario });
     } catch (error) {
         console.log(error);
@@ -48,6 +48,7 @@ exports.listar = async (req, res) => {
         contenido.tipo = 0;
         contenido.msj = "Error al cargar los datos de usuarios";
         enviar(500, contenido, res);
+        console.log(error); 
     }
 };
 
@@ -57,7 +58,7 @@ function enviar(status, contenido, res) {
 
 exports.editar = async (req, res) => {
     const { id_usuario } = req.query;
-    const { nombre_usuario, apellido_usuario, email, contraseña_usuario, nombre_rol } = req.body;
+    const { nombre_usuario, apellido_usuario, email, contraseña_usuario, tipoUsuario } = req.body;
 
     try {
         const usuarioExistente = await Usuarios.findOne({ where: { id_usuario } });
@@ -68,7 +69,7 @@ exports.editar = async (req, res) => {
             apellido_usuario: apellido_usuario || usuarioExistente.apellido_usuario,
             email: email || usuarioExistente.email,
             contraseña_usuario: contraseña_usuario || usuarioExistente.contraseña_usuario,
-            nombre_rol: nombre_rol || usuarioExistente.nombre_rol
+            tipoUsuario: tipoUsuario || usuarioExistente.tipoUsuario
         }, { where: { id_usuario } });
 
         res.json({ message: "Usuario actualizado con éxito" });
@@ -84,9 +85,9 @@ exports.eliminar = async (req, res) => {
 
         if (!usuario) return res.status(404).json({ message: "Usuario no encontrado" });
 
-        if (usuario.nombre_rol === 'Docente') {
+        if (usuario.tipoUsuario === 'Docente') {
             await Docente.destroy({ where: { id_usuario: usuario.id_usuario } });
-        } else if (usuario.nombre_rol === 'Estudiante') {
+        } else if (usuario.tipoUsuario === 'Estudiante') {
             await Estudiante.destroy({ where: { id_usuario: usuario.id_usuario } });
         }
 
@@ -146,12 +147,12 @@ exports.actualizarContrasena = async (req, res) => {
 
     try {
         const { email, contrasena, pin } = req.body;
-        const usuario = await Usuarios.findOne({ where: { correo: email } });
+        const usuario = await Usuarios.findOne({ where: { email } });
         if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
         if (usuario.pin !== pin) return res.status(404).json({ error: 'El pin no responde' });
 
         const hash = await argon2.hash(contrasena, { type: argon2.argon2id, memoryCost: 2 ** 16, timeCost: 4, parallelism: 2 });
-        await usuario.update({ contrasena: hash });
+        await usuario.update({ contraseña_usuario: hash });
         res.json({ message: 'Usuario actualizado correctamente' });
     } catch (error) {
         res.status(500).json({ error: 'Error al actualizar el usuario' });
@@ -165,29 +166,29 @@ exports.iniciarSesion = async (req, res) => {
     try {
         const { login, contrasena } = req.body;
         const usuario = await Usuarios.findOne({
-            attributes: ['nombre', 'tipoUsuario', 'email', 'contrasena'],
+            attributes: ['nombre_usuario', 'tipoUsuario', 'email', 'contraseña_usuario'],
             where: {
-                [Op.or]: [{ email: { [Op.like]: login } }, { nombre: { [Op.like]: login } }],
+                [Op.or]: [{ email: { [Op.like]: login } }, { nombre_usuario: { [Op.like]: login } }],
                 estado: 'Activo'
             }
         });
-        if (!usuario) return res.status(404).json({ error: 'Usuario o contrasena es incorrecto' });
+        if (!usuario) return res.status(404).json({ error: 'Usuario o contraseña es incorrecto' });
 
-        if (await argon2.verify(usuario.contrasena, contrasena)) {
+        if (await argon2.verify(usuario.contraseña_usuario, contrasena)) {
             const Usuario = {
-                login: usuario.nombre,
+                login: usuario.nombre_usuario,
                 tipo: usuario.tipoUsuario,
                 correo: usuario.email,
                 datoPersonales: usuario.tipoUsuario === 'Docente' ? usuario.docente : usuario.estudiante
             };
-            const Token = getToken({ id: usuario.id });
+            const Token = getToken({ id: usuario.id_usuario });
             return res.json({ Token, Usuario });
         } else {
-            return res.status(404).json({ error: 'Usuario o contrasena incorrecta' });
+            return res.status(404).json({ error: 'Usuario o contraseña incorrecta' });
         }
     } catch (error) {
         console.log(error);
-        res.status(500).json({ error: 'Error al iniciar sesion' });
+        res.status(500).json({ error: 'Error al iniciar sesión' });
+        console.log(error);
     }
 };
-

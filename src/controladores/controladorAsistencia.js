@@ -1,4 +1,6 @@
 const ModeloAsistencia = require('../modelos/asistencia');
+const ModeloEstudiante = require('../modelos/estudiante');
+const ModeloAsignatura = require('../modelos/asignatura');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 
@@ -7,68 +9,150 @@ exports.inicio = (req, res) => {
 };
 
 exports.listar = async (req, res) => {
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    try {
-        const data = await ModeloAsistencia.findAll();
-        contenido.tipo = 1;
-        contenido.datos = data;
-        enviar(200, contenido, res);
-    } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error al cargar los datos de asistencias";
-        enviar(500, contenido, res);
-    }
+  let contenido = {
+      tipo: 0,
+      datos: [],
+      msj: [],
+  };
+  try {
+      const data = await ModeloAsistencia.findAll({
+          include: [
+              {
+                  model: ModeloEstudiante,
+                  attributes: ['nombre', 'apellido']
+              },
+              {
+                  model: ModeloAsignatura,
+                  attributes: ['nombre_asignatura']
+              }
+          ]
+      });
+
+      contenido.tipo = 1;
+      contenido.datos = data.map(asistencia => ({
+          nombre_estudiante: `${asistencia.Estudiante.nombre} ${asistencia.Estudiante.apellido}`,
+          nombre_asignatura: asistencia.Asignatura.nombre_asignatura,
+          fecha: asistencia.fecha,
+          estado: asistencia.estado
+      }));
+      enviar(200, contenido, res);
+  } catch (error) {
+      contenido.tipo = 0;
+      contenido.msj = "Error al cargar los datos de asistencias";
+      enviar(500, contenido, res);
+      console.log(error);
+  }
 };
 
 exports.guardar = async (req, res) => {
-    const { id_estudiante, id_asignatura, fecha, estado } = req.body;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    contenido.msj = errores(validationResult(req));
-    if (contenido.msj.length > 0) {
-        return enviar(200, contenido, res);
-    }
-    try {
-        const data = await ModeloAsistencia.create({ id_estudiante, id_asignatura, fecha, estado });
-        contenido.tipo = 1;
-        contenido.datos = data;
-        contenido.msj = "Asistencia guardada correctamente";
-        enviar(200, contenido, res);
-    } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al guardar la asistencia";
-        enviar(500, contenido, res);
-    }
+  const { nombre_estudiante, apellido_estudiante, nombre_asignatura, fecha, estado } = req.body;
+  let contenido = {
+      tipo: 0,
+      datos: [],
+      msj: [],
+  };
+  contenido.msj = errores(validationResult(req));
+  if (contenido.msj.length > 0) {
+      return enviar(200, contenido, res);
+  }
+  try {
+      // Buscar el estudiante por nombre y apellido
+      const estudiante = await ModeloEstudiante.findOne({ where: { nombre: nombre_estudiante, apellido: apellido_estudiante } });
+      if (!estudiante) {
+          return res.status(404).json({ error: 'Estudiante no encontrado' });
+      }
+
+      // Buscar la asignatura por nombre
+      const asignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura } });
+      if (!asignatura) {
+          return res.status(404).json({ error: 'Asignatura no encontrada' });
+      }
+
+      // Crear nueva asistencia
+      const nuevaAsistencia = await ModeloAsistencia.create({
+          id_estudiante: estudiante.id_estudiante,
+          id_asignatura: asignatura.id_asignatura,
+          fecha,
+          estado
+      });
+
+      // Preparar la respuesta
+      const response = {
+          nombre_estudiante: `${estudiante.nombre} ${estudiante.apellido}`,
+          nombre_asignatura: asignatura.nombre_asignatura,
+          fecha: nuevaAsistencia.fecha,
+          estado: nuevaAsistencia.estado
+      };
+
+      contenido.tipo = 1;
+      contenido.datos = response;
+      contenido.msj = "Asistencia guardada correctamente";
+      enviar(200, contenido, res);
+  } catch (error) {
+      contenido.tipo = 0;
+      contenido.msj = "Error en el servidor al guardar la asistencia";
+      enviar(500, contenido, res);
+      console.log(error);
+  }
 };
 
 exports.editar = async (req, res) => {
-    const { id_asistencia } = req.query;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    contenido.msj = errores(validationResult(req));
-    if (contenido.msj.length > 0) {
-        return enviar(200, contenido, res);
-    }
-    try {
-        await ModeloAsistencia.update(req.body, { where: { id_asistencia } });
-        contenido.tipo = 1;
-        contenido.msj = "Asistencia editada correctamente";
-        enviar(200, contenido, res);
-    } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al editar la asistencia";
-        enviar(500, contenido, res);
-    }
+  const { id_asistencia } = req.query;
+  const { nombre_estudiante, apellido_estudiante, nombre_asignatura, fecha, estado } = req.body;
+  let contenido = {
+      tipo: 0,
+      datos: [],
+      msj: [],
+  };
+  contenido.msj = errores(validationResult(req));
+  if (contenido.msj.length > 0) {
+      return enviar(200, contenido, res);
+  }
+  try {
+      // Buscar la asistencia por id
+      const asistencia = await ModeloAsistencia.findOne({ where: { id_asistencia } });
+      if (!asistencia) {
+          return res.status(404).json({ error: 'Asistencia no encontrada' });
+      }
+
+      // Buscar el estudiante por nombre y apellido
+      const estudiante = await ModeloEstudiante.findOne({ where: { nombre: nombre_estudiante, apellido: apellido_estudiante } });
+      if (!estudiante) {
+          return res.status(404).json({ error: 'Estudiante no encontrado' });
+      }
+
+      // Buscar la asignatura por nombre
+      const asignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura } });
+      if (!asignatura) {
+          return res.status(404).json({ error: 'Asignatura no encontrada' });
+      }
+
+      // Actualizar la asistencia
+      asistencia.id_estudiante = estudiante.id_estudiante;
+      asistencia.id_asignatura = asignatura.id_asignatura;
+      asistencia.fecha = fecha;
+      asistencia.estado = estado;
+      await asistencia.save();
+
+      // Preparar la respuesta
+      const response = {
+          id_asistencia: asistencia.id_asistencia,
+          nombre_estudiante: `${estudiante.nombre} ${estudiante.apellido}`,
+          nombre_asignatura: asignatura.nombre_asignatura,
+          fecha: asistencia.fecha,
+          estado: asistencia.estado
+      };
+
+      contenido.tipo = 1;
+      contenido.datos = response;
+      contenido.msj = "Asistencia editada correctamente";
+      enviar(200, contenido, res);
+  } catch (error) {
+      contenido.tipo = 0;
+      contenido.msj = "Error en el servidor al editar la asistencia";
+      enviar(500, contenido, res);
+      console.log(error);
+  }
 };
 
 exports.eliminar = async (req, res) => {

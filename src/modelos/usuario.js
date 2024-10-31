@@ -80,6 +80,7 @@ const Usuarios = db.define(
             nombre: usuario.nombre_usuario,
             apellido: usuario.apellido_usuario,
             email: usuario.email,
+            id_carrera: usuario.id_carrera // Ensure id_carrera is passed correctly
           });
         } else if (usuario.tipoUsuario === 'Docente') {
           await Docente.create({

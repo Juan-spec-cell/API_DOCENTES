@@ -1,21 +1,21 @@
-const sequelize = require('sequelize');
+const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
 
 const Carrera = db.define(
-    "carrera",
+    "Carrera",
     {
         id_carrera: {
-            type: sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
             allowNull: false,
         },
         nombre_carrera: {
-            type: sequelize.STRING(100),
+            type: DataTypes.STRING(100),
             allowNull: false,
         },
         facultad: {
-            type: sequelize.STRING(100),
+            type: DataTypes.STRING(100),
             allowNull: false,
         }
     },
@@ -25,7 +25,7 @@ const Carrera = db.define(
 );
 
 // Definimos las relaciones en este método
-Carrera.relaciones = (models) => {
+Carrera.associate = (models) => {
     Carrera.hasMany(models.Estudiante, { foreignKey: 'id_carrera' });
     Carrera.hasMany(models.Asignatura, { foreignKey: 'id_carrera' });
 };

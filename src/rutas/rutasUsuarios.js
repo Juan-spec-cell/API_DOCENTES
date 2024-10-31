@@ -59,10 +59,10 @@ rutas.get('/', controladorUsuario.inicio);
  *                       contraseña_usuario:
  *                         type: string
  *                         description: Contraseña del usuario.
- *                       nombre_rol:
+ *                       tipoUsuario:
  *                         type: string
  *                         enum: [Estudiante, Docente]
- *                         description: Rol del usuario.
+ *                         description: Tipo de usuario.
  *                 msj:
  *                   type: array
  *                   items:
@@ -97,10 +97,10 @@ rutas.get('/listar', controladorUsuario.listar);
  *               contraseña_usuario:
  *                 type: string
  *                 description: Contraseña del usuario
- *               nombre_rol:
+ *               tipoUsuario:
  *                 type: string
  *                 enum: [Estudiante, Docente]
- *                 description: Rol del usuario
+ *                 description: Tipo de usuario
  *     responses:
  *       200:
  *         description: Usuario guardado
@@ -112,8 +112,8 @@ rutas.post('/guardar',
     body("apellido_usuario").isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
     body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
     body("contraseña_usuario").isString().withMessage('La contraseña no puede estar vacía'),
-    body("nombre_rol").customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
-        .isIn(['Estudiante', 'Docente']).withMessage('El rol debe ser "Estudiante" o "Docente"'),
+    body("tipoUsuario").customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
+        .isIn(['Estudiante', 'Docente']).withMessage('El tipo de usuario debe ser "Estudiante" o "Docente"'),
     controladorUsuario.guardar
 );
 
@@ -149,10 +149,10 @@ rutas.post('/guardar',
  *               contraseña_usuario:
  *                 type: string
  *                 description: Contraseña del usuario (opcional)
- *               nombre_rol:
+ *               tipoUsuario:
  *                 type: string
  *                 enum: [Estudiante, Docente]
- *                 description: Rol del usuario (opcional)
+ *                 description: Tipo de usuario (opcional)
  *     responses:
  *       200:
  *         description: Usuario editado
@@ -176,8 +176,8 @@ rutas.put('/editar',
     body("apellido_usuario").optional().isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
     body("email").optional().isEmail().withMessage('El correo electrónico debe ser válido'),
     body("contraseña_usuario").optional().isString().withMessage('La contraseña no puede estar vacía'),
-    body("nombre_rol").optional().customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
-        .isIn(['Estudiante', 'Docente']).withMessage('El rol debe ser "Estudiante" o "Docente"'),
+    body("tipoUsuario").optional().customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
+        .isIn(['Estudiante', 'Docente']).withMessage('El tipo de usuario debe ser "Estudiante" o "Docente"'),
     controladorUsuario.editar
 );
 
@@ -263,9 +263,15 @@ rutas.post('/recuperar',
  *               email:
  *                 type: string
  *                 description: Correo electrónico del usuario
+ *               contrasena:
+ *                 type: string
+ *                 description: Nueva contraseña del usuario
+ *               pin:
+ *                 type: string
+ *                 description: PIN de recuperación
  *     responses:
  *       200:
- *         description: Correo enviado correctamente
+ *         description: Contraseña actualizada correctamente
  *       400:
  *         description: Error en los datos proporcionados
  *       404:
@@ -274,7 +280,9 @@ rutas.post('/recuperar',
  *         description: Error al actualizar el usuario
  */
 rutas.post('/actualizar/contrasena',
-    body("email").isEmail().withMessage('La contrasena ha sido actualizada'),
+    body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
+    body("contrasena").isString().withMessage('La contraseña no puede estar vacía'),
+    body("pin").isLength({ min: 6, max: 6 }).isHexadecimal().withMessage('El pin contiene un valor incorrecto'),
     controladorUsuario.actualizarContrasena
 );
 
@@ -282,7 +290,7 @@ rutas.post('/actualizar/contrasena',
  * @swagger
  * /usuarios/iniciarSesion:
  *   post:
- *     summary: Actualiza la contraseña de un usuario
+ *     summary: Inicia sesión de un usuario
  *     tags: [Usuarios]
  *     requestBody:
  *       required: true
@@ -291,45 +299,26 @@ rutas.post('/actualizar/contrasena',
  *           schema:
  *             type: object
  *             properties:
- *               email:
+ *               login:
  *                 type: string
- *                 description: Correo electrónico del usuario
+ *                 description: Correo electrónico o nombre de usuario
+ *               contrasena:
+ *                 type: string
+ *                 description: Contraseña del usuario
  *     responses:
  *       200:
- *         description: Correo enviado correctamente
+ *         description: Sesión iniciada correctamente
  *       400:
  *         description: Error en los datos proporcionados
  *       404:
  *         description: Usuario no encontrado
  *       500:
- *         description: Error al actualizar el usuario
+ *         description: Error al iniciar sesión
  */
 rutas.post('/iniciarSesion',
-    body("email").isEmail().withMessage('Debe Iniciar Sesion'),
+    body("login").isString().withMessage('El login debe ser una cadena de texto'),
+    body("contrasena").isString().withMessage('La contraseña no puede estar vacía'),
     controladorUsuario.iniciarSesion
 );
 
-const validarPin = [
-    body('email').isEmail().withMessage('Debe enviar un correo valido')
-    .custom(async (value) => {
-        if (value){
-            const buscarUsuario = await Usuarios.findOne({ where: { email: value}});
-            if (!buscarUsuario){
-                throw new Error('Usuario no encontrado');
-            }
-        }
-    }),
-];
-const validarRecuperacion = [
-    body('email').isEmail().withMessage('Debe enviar un correo valido'),
-    body('pin').isLength({ min: 6, max: 6}).isHexadecimal().withMessage('El pin contiene un valor incorrecto'),
-    body('contrasena').isLength({ min: 6, max: 12}).withMessage('La cantidad de caracteres permitida en la contrasena es de 6 -12')
-];
-
-const validacionEstado = [
-    query('estado').isInt(['Activo', 'Bloqueado', 'Inactivo', 'Logeado']).withMessage('El estado seleccionado no es el correcto')
-];
-
-rutas.post('/pin', validarPin, controladorUsuario.recuperarContrasena);
-rutas.post('/actualizar/contrasena', validarRecuperacion, controladorUsuario.actualizarContrasena);
 module.exports = rutas;

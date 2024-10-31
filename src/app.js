@@ -1,13 +1,13 @@
-// src/app.js
-const express = require('express');
 require('dotenv').config();
+const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const db = require('./configuracion/db');
 const swagger = require('./documentacion/swagger');
-const sincronizarModelos = require('./configuracion/sincronizar_modelos');
+const sincronizarModelos = require('./configuracion/sincronizar_modelos'); // Asegúrate de que esta ruta sea correcta
+const passport = require('passport');
 
 const PORT = process.env.PORT || 3002;
 const app = express();
@@ -19,6 +19,8 @@ app.use(helmet());
 app.use(cors(require('./configuracion/cors')));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+app.use(passport.initialize());
 
 // Inicializar Swagger
 swagger(app);
@@ -41,10 +43,7 @@ app.use('/api/calificaciones', require('./rutas/rutasCalificacion'));
 app.use('/api/estudiantes', require('./rutas/rutasEstudiante'));
 app.use('/api/matriculas', require('./rutas/rutasMatricula'));
 app.use('/api/periodos', require('./rutas/rutasPeriodo'));
-
-// Añadir rutas para usuarios y roles
 app.use('/api/usuarios', require('./rutas/rutasUsuarios')); // Ruta para gestionar usuarios
-app.use('/api/roles', require('./rutas/rutasRoles_Cuenta')); // Ruta para gestionar roles
 
 // Conexión a la base de datos y sincronización de modelos
 db.authenticate()

@@ -31,10 +31,24 @@ const Estudiante = db.define(
       allowNull: false,
       unique: true,
     },
+    id_carrera: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'carreras',
+        key: 'id_carrera',
+      }
+    }
   },
   {
     tableName: "estudiantes"
   }
 );
+
+// Definimos las relaciones en este método
+Estudiante.associate = (models) => {
+    Estudiante.belongsTo(models.Carrera, { foreignKey: 'id_carrera' });
+    Estudiante.hasMany(models.Matricula, { foreignKey: 'id_estudiante' });
+};
 
 module.exports = Estudiante;
