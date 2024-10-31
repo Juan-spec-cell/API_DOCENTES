@@ -3,7 +3,6 @@ const argon2 = require("argon2");
 const db = require("../configuracion/db");
 const Docente = require('./docente');
 const Estudiante = require('./estudiante');
-const Roles = require('./roles');
 
 // Definición del modelo Usuarios
 const Usuarios = db.define(
@@ -48,24 +47,23 @@ const Usuarios = db.define(
         notEmpty: { msg: "El campo contraseña no puede ir vacío" },
       },
     },
-    nombre_rol: {
-      type: sequelize.ENUM('Estudiante', 'Docente'),
+    estado: {
+      type: sequelize.ENUM('Activo', 'Bloqueado', 'Inactivo', 'Logeado'),
+      defaultValue: 'Activo'
+    },
+    intentos: {
+      type: sequelize.INTEGER,
+      defaultValue: 0
+    },
+    tipoUsuario: {
+      type: sequelize.ENUM('Docente', 'Estudiante'),
       allowNull: false,
       validate: {
         isIn: {
-          args: [['Estudiante', 'Docente']],
-          msg: "El rol debe ser 'Estudiante' o 'Docente'",
+          args: [['Docente', 'Estudiante']],
+          msg: "El tipo de usuario debe ser 'Docente' o 'Estudiante'",
         },
       },
-    },
-    rolId: {
-      type: sequelize.INTEGER,
-      references: {
-        model: Roles,
-        key: 'id_rol',
-      },
-      onDelete: 'SET NULL',
-      onUpdate: 'CASCADE',
     },
   },
   {
@@ -76,16 +74,14 @@ const Usuarios = db.define(
         usuario.contraseña_usuario = await argon2.hash(usuario.contraseña_usuario);
       },
       afterCreate: async (usuario) => {
-        if (usuario.nombre_rol === 'Estudiante') {
-          // Crear Estudiante
+        if (usuario.tipoUsuario === 'Estudiante') {
           await Estudiante.create({
             id_usuario: usuario.id_usuario,
             nombre: usuario.nombre_usuario,
             apellido: usuario.apellido_usuario,
             email: usuario.email,
           });
-        } else if (usuario.nombre_rol === 'Docente') {
-          // Crear Docente
+        } else if (usuario.tipoUsuario === 'Docente') {
           await Docente.create({
             id_usuario: usuario.id_usuario,
             nombre: usuario.nombre_usuario,
@@ -100,13 +96,11 @@ const Usuarios = db.define(
         }
       },
       beforeDestroy: async (usuario) => {
-        if (usuario.nombre_rol === 'Estudiante') {
-          // Eliminar Estudiante
+        if (usuario.tipoUsuario === 'Estudiante') {
           await Estudiante.destroy({
             where: { id_usuario: usuario.id_usuario }
           });
-        } else if (usuario.nombre_rol === 'Docente') {
-          // Eliminar Docente
+        } else if (usuario.tipoUsuario === 'Docente') {
           await Docente.destroy({
             where: { id_usuario: usuario.id_usuario }
           });
@@ -125,8 +119,5 @@ Usuarios.prototype.VerificarContrasena = async function (con) {
 Usuarios.prototype.CifrarContrasena = async function (con) {
   return await argon2.hash(con);
 };
-
-// Define associations
-Usuarios.belongsTo(Roles, { foreignKey: 'rolId' });
 
 module.exports = Usuarios;

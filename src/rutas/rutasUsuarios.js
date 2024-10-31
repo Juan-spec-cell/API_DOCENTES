@@ -247,4 +247,89 @@ rutas.post('/recuperar',
     controladorUsuario.recuperarContrasena
 );
 
+/**
+ * @swagger
+ * /usuarios/actualizarContrasena:
+ *   post:
+ *     summary: Actualiza la contraseña de un usuario
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Correo electrónico del usuario
+ *     responses:
+ *       200:
+ *         description: Correo enviado correctamente
+ *       400:
+ *         description: Error en los datos proporcionados
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al actualizar el usuario
+ */
+rutas.post('/actualizar/contrasena',
+    body("email").isEmail().withMessage('La contrasena ha sido actualizada'),
+    controladorUsuario.actualizarContrasena
+);
+
+/**
+ * @swagger
+ * /usuarios/iniciarSesion:
+ *   post:
+ *     summary: Actualiza la contraseña de un usuario
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Correo electrónico del usuario
+ *     responses:
+ *       200:
+ *         description: Correo enviado correctamente
+ *       400:
+ *         description: Error en los datos proporcionados
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al actualizar el usuario
+ */
+rutas.post('/iniciarSesion',
+    body("email").isEmail().withMessage('Debe Iniciar Sesion'),
+    controladorUsuario.iniciarSesion
+);
+
+const validarPin = [
+    body('email').isEmail().withMessage('Debe enviar un correo valido')
+    .custom(async (value) => {
+        if (value){
+            const buscarUsuario = await Usuarios.findOne({ where: { email: value}});
+            if (!buscarUsuario){
+                throw new Error('Usuario no encontrado');
+            }
+        }
+    }),
+];
+const validarRecuperacion = [
+    body('email').isEmail().withMessage('Debe enviar un correo valido'),
+    body('pin').isLength({ min: 6, max: 6}).isHexadecimal().withMessage('El pin contiene un valor incorrecto'),
+    body('contrasena').isLength({ min: 6, max: 12}).withMessage('La cantidad de caracteres permitida en la contrasena es de 6 -12')
+];
+
+const validacionEstado = [
+    query('estado').isInt(['Activo', 'Bloqueado', 'Inactivo', 'Logeado']).withMessage('El estado seleccionado no es el correcto')
+];
+
+rutas.post('/pin', validarPin, controladorUsuario.recuperarContrasena);
+rutas.post('/actualizar/contrasena', validarRecuperacion, controladorUsuario.actualizarContrasena);
 module.exports = rutas;
