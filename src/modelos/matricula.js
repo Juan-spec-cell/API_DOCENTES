@@ -1,41 +1,23 @@
 const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
+const estudiante = require('./estudiante');
+const periodo = require('./periodo');
 
-const Matricula = db.define(
+const matricula = db.define(
     "Matricula",
     {
-        id_matricula: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
-            allowNull: false,
-        },
-        id_estudiante: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-                model: 'estudiantes',
-                key: 'id_estudiante',
-            }
-        },
-        id_periodo: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-                model: 'periodos',
-                key: 'id_periodo',
-            }
-        }
+
     },
     {
-        tableName: "matriculas"
+        tableName: "matriculas",
+        timestamps: true
     }
 );
 
-// Definir las relaciones
-Matricula.associate = (models) => {
-    Matricula.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante' });
-    Matricula.belongsTo(models.Periodo, { foreignKey: 'id_periodo' });
-};
+estudiante.hasMany(matricula, { foreignKey: 'estudianteId' });
+matricula.belongsTo(estudiante, { foreignKey: 'estudianteId' });
 
-module.exports = Matricula;
+periodo.hasMany(matricula, { foreignKey: 'periodoId' });
+matricula.belongsTo(periodo, { foreignKey: 'periodoId' });
+
+module.exports = matricula;

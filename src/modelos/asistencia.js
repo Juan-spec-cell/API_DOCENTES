@@ -1,31 +1,11 @@
 const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
+const asignatura = require('./asignatura');
+const estudiante = require('./estudiante');
 
-const Asistencia = db.define(
+const asistencia = db.define(
     "Asistencia",
     {
-        id_asistencia: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
-            allowNull: false,
-        },
-        id_estudiante: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-                model: 'estudiantes',
-                key: 'id_estudiante',
-            }
-        },
-        id_asignatura: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-                model: 'asignaturas',
-                key: 'id_asignatura',
-            }
-        },
         fecha: {
             type: DataTypes.DATE,
             allowNull: false,
@@ -41,9 +21,11 @@ const Asistencia = db.define(
 );
 
 // Definimos las relaciones en este método
-Asistencia.associate = (models) => {
-    Asistencia.belongsTo(models.Estudiante, { foreignKey: 'id_estudiante' });
-    Asistencia.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura' });
-};
+estudiante.hasMany(asistencia, { foreignKey: 'estudianteId' });
+asistencia.belongsTo(estudiante, { foreignKey: 'estudianteId' });
 
-module.exports = Asistencia;
+asignatura.hasMany(asistencia, { foreignKey: 'asignaturaId' });
+asistencia.belongsTo(asignatura, { foreignKey: 'asignaturaId' });
+
+
+module.exports = asistencia;

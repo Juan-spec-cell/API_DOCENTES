@@ -1,33 +1,12 @@
 const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
-const Estudiante = require('./estudiante');
-const Asignatura = require('./asignatura');
+const estudiante = require('./estudiante');
+const asignatura = require('./asignatura');
+const actividad = require('./actividad');
 
-const Calificacion = db.define(
+const calificacion = db.define(
     "Calificacion",
     {
-        id_calificacion: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
-            allowNull: false,
-        },
-        id_estudiante: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-                model: Estudiante,
-                key: 'id_estudiante',
-            }
-        },
-        id_asignatura: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-                model: Asignatura,
-                key: 'id_asignatura',
-            }
-        },
         nota: {
             type: DataTypes.FLOAT,
             allowNull: false,
@@ -38,10 +17,13 @@ const Calificacion = db.define(
     }
 );
 
-// Definición de las relaciones
-Calificacion.associate = (modelos) => {
-    Calificacion.belongsTo(modelos.Estudiante, { foreignKey: 'id_estudiante' });
-    Calificacion.belongsTo(modelos.Asignatura, { foreignKey: 'id_asignatura' });
-};
+estudiante.hasMany(calificacion, { foreignKey: 'estudianteId' });
+calificacion.belongsTo(estudiante, { foreignKey: 'estudianteId' });
 
-module.exports = Calificacion;
+asignatura.hasMany(calificacion, { foreignKey: 'asignaturaId' });
+calificacion.belongsTo(asignatura, { foreignKey: 'asignaturaId' });
+
+actividad.hasMany(calificacion, { foreignKey: 'actividadId' });
+calificacion.belongsTo(actividad, { foreignKey: 'actividadId' });
+
+module.exports = calificacion;

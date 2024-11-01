@@ -2,7 +2,8 @@ const ModeloDocente = require('../modelos/docente');
 const ModeloUsuario = require('../modelos/usuario');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
-
+const argon2 = require('argon2');
+const db = require('../configuracion/db');
 exports.inicio = (req, res) => {
     res.json({ msj: "Hola desde el controlador de docentes" });
 };
@@ -15,7 +16,7 @@ exports.listar = async (req, res) => {
     };
     try {
         const data = await ModeloDocente.findAll();
-        
+
         contenido.tipo = 1;
         contenido.datos = data.map(docente => ({
             id_docente: docente.id_docente,
@@ -33,112 +34,128 @@ exports.listar = async (req, res) => {
 };
 
 exports.guardar = async (req, res) => {
-    const { nombre_docente, apellido_docente, email } = req.body;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    contenido.msj = errores(validationResult(req));
-    if (contenido.msj.length > 0) {
-        return enviar(200, contenido, res);
+    // Validar entrada de datos
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(errors.array());
     }
+    const t = await db.transaction();
     try {
-        // Crear nuevo docente
-        const nuevoDocente = await ModeloDocente.create({
-            nombre: nombre_docente,
-            apellido: apellido_docente,
-            email: email
+        const { nombre, email, tipoUsuario, contrasena } = req.body;
+        const hash = await argon2.hash(contrasena, {
+            type: argon2.argon2id,
+            memoryCost: 2 ** 16, // 64MB
+            timeCost: 4,
+            parallelism: 2,
         });
+        // Crear el usuario del cliente
+        const usuario = await ModeloUsuario.create(
+            { nombre, email, tipoUsuario, contrasena: hash },
+            { transaction: t });
 
-        // Preparar la respuesta
-        const response = {
-            id_docente: nuevoDocente.id_docente,
-            nombre_docente: `${nuevoDocente.nombre} ${nuevoDocente.apellido}`,
-            email: nuevoDocente.email
-        };
-
-        contenido.tipo = 1;
-        contenido.datos = response;
-        contenido.msj = "Docente guardado correctamente";
-        enviar(200, contenido, res);
+        // Crear el cliente
+        const docente = await ModeloDocente.create({ ...req.body, usuarioId: usuario.id }, { transaction: t });
+        await t.commit();
+        res.status(201).json(docente);
     } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al guardar el docente";
-        enviar(500, contenido, res);
-        console.log(error);
+        console.error(error);
+        await t.rollback();
+        res.status(500).json({ error: 'Error al crear el cliente' });
     }
 };
 
 exports.editar = async (req, res) => {
-    const { id_docente } = req.query;
-    const { nombre_docente, apellido_docente, email } = req.body;
+    // Validar la entrada de datos
+    const errors = validationResult(req);
     let contenido = {
         tipo: 0,
         datos: [],
         msj: [],
     };
-    contenido.msj = errores(validationResult(req));
+    contenido.msj = errores(errors);
     if (contenido.msj.length > 0) {
         return enviar(200, contenido, res);
     }
+
+    const t = await db.transaction();
     try {
+        const { id } = req.query;
+        const { primerNombre, primerApellido, email } = req.body;
+
         // Buscar el docente por id
-        const docente = await ModeloDocente.findOne({ where: { id_docente } });
+        const docente = await ModeloDocente.findOne({ where: { id }, transaction: t });
         if (!docente) {
             return res.status(404).json({ error: 'Docente no encontrado' });
         }
 
         // Actualizar el docente
-        docente.nombre = nombre_docente;
-        docente.apellido = apellido_docente;
-        docente.email = email;
-        await docente.save();
+        await docente.update(
+            { nombre: primerNombre, apellido: primerApellido, email },
+            { transaction: t }
+        );
 
         // Preparar la respuesta
         const response = {
-            id_docente: docente.id_docente,
-            nombre_docente: `${docente.nombre} ${docente.apellido}`,
-            email: docente.email
+            id: docente.id,
+            primerNombre: docente.primerNombre,
+            primerApellido: docente.primerApellido,
+            email: docente.email,
         };
 
         contenido.tipo = 1;
         contenido.datos = response;
-        contenido.msj = "Docente editado correctamente";
+        contenido.msj = 'Docente editado correctamente';
+        await t.commit();
         enviar(200, contenido, res);
     } catch (error) {
+        await t.rollback();
         contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al editar el docente";
+        contenido.msj = 'Error en el servidor al editar el docente';
         enviar(500, contenido, res);
-        console.log(error);
+        console.error(error);
     }
 };
 
 exports.eliminar = async (req, res) => {
-    const { id_docente } = req.query;
+    const t = await db.transaction();
     let contenido = {
         tipo: 0,
         datos: [],
         msj: [],
     };
+
     try {
-        const docenteExistente = await ModeloDocente.findOne({ where: { id_docente } });
+        const { id } = req.query;
+
+        // Buscar el docente por id
+        const docenteExistente = await ModeloDocente.findOne({ where: { id }, transaction: t });
         if (!docenteExistente) {
             contenido.msj = "El docente no existe";
             return enviar(404, contenido, res);
         }
 
-        await ModeloDocente.destroy({ where: { id_docente } });
+        // Obtener el usuarioId asociado al docente
+        const usuarioId = docenteExistente.usuarioId;
 
+        // Eliminar el docente y el usuario relacionado
+        await docenteExistente.destroy({ transaction: t });
+        await ModeloUsuario.destroy({ where: { id: usuarioId }, transaction: t });
+
+        // Confirmar la transacción
+        await t.commit();
         contenido.tipo = 1;
         contenido.msj = "Docente eliminado correctamente";
         enviar(200, contenido, res);
     } catch (error) {
+        // Revertir la transacción en caso de error
+        await t.rollback();
         contenido.tipo = 0;
         contenido.msj = "Error en el servidor al eliminar el docente";
         enviar(500, contenido, res);
+        console.error(error);
     }
 };
+
 
 // Filtro para buscar por id de Docente
 exports.busqueda_id = async (req, res) => {
@@ -151,7 +168,7 @@ exports.busqueda_id = async (req, res) => {
         res.json({ msj: "Hay errores en la petición", error: msjerror });
     } else {
         try {
-            const busqueda = await ModeloDocente.findOne({ where: { id_docente: req.query.id } });
+            const busqueda = await ModeloDocente.findOne({ where: { id: req.query.id } });
             res.json(busqueda);
         } catch (error) {
             res.json(error);
@@ -170,7 +187,7 @@ exports.busqueda_nombre = async (req, res) => {
         res.json({ msj: "Hay errores en la petición", error: msjerror });
     } else {
         try {
-            const busqueda = await ModeloDocente.findOne({ where: { nombre: req.query.nombre } });
+            const busqueda = await ModeloDocente.findOne({ where: { nombre: req.query.primerNombre } });
             res.json(busqueda);
         } catch (error) {
             res.json(error);

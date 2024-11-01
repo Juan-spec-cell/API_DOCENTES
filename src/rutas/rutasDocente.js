@@ -66,20 +66,23 @@ rutas.get('/listar', controladorDocente.listar);
  *         description: Error en los datos proporcionados
  */
 rutas.post('/guardar',
-    body("nombre_docente")
-        .isString().withMessage('El nombre debe ser una cadena de texto')
-        .notEmpty().withMessage('El nombre no permite valores nulos'),
-    body("apellido_docente")
-        .isString().withMessage('El apellido debe ser una cadena de texto')
-        .notEmpty().withMessage('El apellido no permite valores nulos'),
+    body('primerNombre').notEmpty().withMessage('El primer nombre es obligatorio')
+        .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
+    body('primerApellido').notEmpty().withMessage('El primer apellido es obligatorio')
+        .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
+    body("nombre")
+        .isString().withMessage('El nombre del usuario debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre del usuario no puede estar vacío'),
     body("email")
-        .isEmail().withMessage('Debe ser un correo electrónico válido')
-        .custom(async value => {
-            const buscarDocente = await ModeloDocente.findOne({ where: { email: value } });
-            if (buscarDocente) {
-                throw new Error('El correo ya está registrado');
-            }
-        }),
+        .isEmail().withMessage('El correo electrónico debe ser válido')
+        .notEmpty().withMessage('El correo no puede estar vacío'),
+    body("tipoUsuario")
+        .isIn(['Estudiante', 'Docente']).withMessage('El tipo de usuario debe ser "Estudiante" o "Docente"')
+        .notEmpty().withMessage('El tipo de usuario no puede estar vacío'),
+    body("contrasena")
+        .isString().withMessage('La contraseña debe ser una cadena de texto')
+        .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
+        .notEmpty().withMessage('La contraseña no puede estar vacía'),
     controladorDocente.guardar
 );
 
@@ -121,24 +124,20 @@ rutas.post('/guardar',
  *         description: Error en los datos proporcionados
  */
 rutas.put('/editar',
-    query("id_docente").isInt().withMessage('El id del docente debe ser un entero'),
-    body("nombre_docente")
-        .optional()
-        .isString().withMessage('El nombre debe ser una cadena de texto')
-        .notEmpty().withMessage('El nombre no permite valores nulos'),
-    body("apellido_docente")
-        .optional()
-        .isString().withMessage('El apellido debe ser una cadena de texto')
-        .notEmpty().withMessage('El apellido no permite valores nulos'),
-    body("email")
-        .optional()
-        .isEmail().withMessage('Debe ser un correo electrónico válido')
+    query("id").isInt().withMessage('El id del docente debe ser un entero')
         .custom(async value => {
-            const buscarDocente = await ModeloDocente.findOne({ where: { email: value } });
-            if (buscarDocente) {
-                throw new Error('El correo ya está registrado');
+            const buscarDocente = await ModeloDocente.findOne({ where: { id: value } });
+            if (!buscarDocente) {
+                throw new Error('El id del estudiante no existe');
             }
         }),
+    body('primerNombre').notEmpty().withMessage('El primer nombre es obligatorio')
+        .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
+    body('primerApellido').notEmpty().withMessage('El primer apellido es obligatorio')
+        .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
+    body("email")
+        .optional()
+        .isEmail().withMessage('Debe ser un correo electrónico válido'),
     controladorDocente.editar
 );
 
@@ -162,7 +161,7 @@ rutas.put('/editar',
  *         description: Docente no encontrado
  */
 rutas.delete('/eliminar',
-    query("id_docente").isInt().withMessage('El id del docente debe ser un entero'),
+    query("id").isInt().withMessage('El id del docente debe ser un entero'),
     controladorDocente.eliminar
 );
 

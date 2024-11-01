@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const { getToken } = require('../configuracion/passport');
 const argon2 = require('argon2');
 
+
 exports.inicio = (req, res) => {
     const rutas = [
         { descripcion: "Inicial de usuarios", url: "/api/usuarios/", tipo: "GET", parametros: "", requeridos: "" },
@@ -48,7 +49,7 @@ exports.listar = async (req, res) => {
         contenido.tipo = 0;
         contenido.msj = "Error al cargar los datos de usuarios";
         enviar(500, contenido, res);
-        console.log(error); 
+        console.log(error);
     }
 };
 
@@ -126,7 +127,7 @@ exports.recuperarContrasena = async (req, res) => {
             html: `
                 <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; border-radius: 8px; width: 80%; margin: auto;">
                     <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-                        <h1 style="color: #333;">¡Hola, ${usuario.nombre_usuario}!</h1>
+                        <h1 style="color: #333;">¡Hola, ${usuario.nombre}!</h1>
                         <p style="color: #555;">Hemos recibido una solicitud para recuperar tu contraseña. Utiliza el siguiente PIN para continuar:</p>
                         <h2 style="background-color: #e7f3fe; color: #31708f; padding: 10px; text-align: center; border-radius: 4px;">Pin: ${pinGenerado}</h2>
                         <p style="color: #555;">Si no solicitaste esta recuperación, puedes ignorar este correo.</p>
@@ -143,16 +144,26 @@ exports.recuperarContrasena = async (req, res) => {
 
 exports.actualizarContrasena = async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errors.array());
+    if (!errors.isEmpty()) {
+        return res.status(400).json(errors.array());
+    }
 
     try {
         const { email, contrasena, pin } = req.body;
-        const usuario = await Usuarios.findOne({ where: { email } });
-        if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
-        if (usuario.pin !== pin) return res.status(404).json({ error: 'El pin no responde' });
-
-        const hash = await argon2.hash(contrasena, { type: argon2.argon2id, memoryCost: 2 ** 16, timeCost: 4, parallelism: 2 });
-        await usuario.update({ contraseña_usuario: hash });
+        const usuario = await Usuarios.findOne({ where: { email: email } });
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        else if (usuario.pin != pin) {
+            return res.status(404).json({ error: 'El pin no responde'});
+        }
+        const hash = await argon2.hash(contrasena, {
+            type: argon2.argon2id,
+            memoryCost: 2 ** 16,
+            timeCost: 4,
+            parallelism: 2
+        });
+        await usuario.update({ contrasena: hash });
         res.json({ message: 'Usuario actualizado correctamente' });
     } catch (error) {
         res.status(500).json({ error: 'Error al actualizar el usuario' });
@@ -166,17 +177,17 @@ exports.iniciarSesion = async (req, res) => {
     try {
         const { login, contrasena } = req.body;
         const usuario = await Usuarios.findOne({
-            attributes: ['nombre_usuario', 'tipoUsuario', 'email', 'contraseña_usuario'],
+            attributes: ['nombre', 'tipoUsuario', 'email', 'contrasena'],
             where: {
-                [Op.or]: [{ email: { [Op.like]: login } }, { nombre_usuario: { [Op.like]: login } }],
+                [Op.or]: [{ email: { [Op.like]: login } }, { nombre: { [Op.like]: login } }],
                 estado: 'Activo'
             }
         });
         if (!usuario) return res.status(404).json({ error: 'Usuario o contraseña es incorrecto' });
 
-        if (await argon2.verify(usuario.contraseña_usuario, contrasena)) {
+        if (await argon2.verify(usuario.contrasena, contrasena)) {
             const Usuario = {
-                login: usuario.nombre_usuario,
+                login: usuario.nombre,
                 tipo: usuario.tipoUsuario,
                 correo: usuario.email,
                 datoPersonales: usuario.tipoUsuario === 'Docente' ? usuario.docente : usuario.estudiante

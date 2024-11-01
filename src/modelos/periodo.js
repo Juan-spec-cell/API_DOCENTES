@@ -1,15 +1,9 @@
 const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
 
-const Periodo = db.define(
+const periodo = db.define(
     "Periodo",
     {
-        id_periodo: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
-            allowNull: false,
-        },
         nombre_periodo: {
             type: DataTypes.STRING(100),
             allowNull: false,
@@ -24,13 +18,9 @@ const Periodo = db.define(
         }
     },
     {
-        tableName: "periodos"
+        tableName: "periodos",
+        timestamps: true
     }
 );
 
-// Definimos las relaciones en este método
-Periodo.associate = (models) => {
-    Periodo.hasMany(models.Matricula, { foreignKey: 'id_periodo' });
-};
-
-module.exports = Periodo;
+module.exports = periodo;
