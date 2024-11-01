@@ -2,6 +2,7 @@ const express = require('express');
 const { body, query } = require('express-validator');
 const controladorEstudiante = require('../controladores/controladorEstudiante');
 const ModeloEstudiante = require('../modelos/estudiante');
+const ModeloCarrera = require('../modelos/carrera');
 const rutas = express.Router();
 
 /**
@@ -48,12 +49,12 @@ rutas.get('/', controladorEstudiante.inicio);
  *                       id_estudiante:
  *                         type: integer
  *                         description: ID del estudiante.
- *                       nombre_estudiante:
+ *                       primerNombre:
  *                         type: string
- *                         description: Nombre del estudiante.
- *                       apellido_estudiante:
+ *                         description: Primer nombre del estudiante.
+ *                       primerApellido:
  *                         type: string
- *                         description: Apellido del estudiante.
+ *                         description: Primer apellido del estudiante.
  *                       email:
  *                         type: string
  *                         description: Email del estudiante.
@@ -69,6 +70,8 @@ rutas.get('/', controladorEstudiante.inicio);
  */
 rutas.get('/listar', controladorEstudiante.listar);
 
+
+
 /**
  * @swagger
  * /estudiantes/guardar:
@@ -82,20 +85,23 @@ rutas.get('/listar', controladorEstudiante.listar);
  *           schema:
  *             type: object
  *             properties:
- *               nombre_estudiante:
+ *               primerNombre:
  *                 type: string
- *                 description: Nombre del estudiante.
- *               apellido_estudiante:
+ *                 description: Primer nombre del estudiante.
+ *               primerApellido:
  *                 type: string
- *                 description: Apellido del estudiante.
+ *                 description: Primer apellido del estudiante.
  *               email:
  *                 type: string
  *                 description: Email del estudiante.
+ *               contrasena:
+ *                 type: string
+ *                 description: Contraseña del usuario.
  *               nombre_carrera:
  *                 type: string
  *                 description: Nombre de la carrera.
  *     responses:
- *       200:
+ *       201:
  *         description: Estudiante guardado correctamente.
  *         content:
  *           application/json:
@@ -131,27 +137,20 @@ rutas.get('/listar', controladorEstudiante.listar);
  */
 rutas.post(
     '/guardar',
-    // Validaciones de los datos de entrada usando express-validator
     body('primerNombre').notEmpty().withMessage('El primer nombre es obligatorio')
         .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
     body('primerApellido').notEmpty().withMessage('El primer apellido es obligatorio')
         .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
-    body("nombre")
-        .isString().withMessage('El nombre del usuario debe ser una cadena de texto')
-        .notEmpty().withMessage('El nombre del usuario no puede estar vacío'),
     body("email")
         .isEmail().withMessage('El correo electrónico debe ser válido')
         .notEmpty().withMessage('El correo no puede estar vacío'),
-    body("tipoUsuario")
-        .isIn(['Estudiante', 'Docente']).withMessage('El tipo de usuario debe ser "Estudiante" o "Docente"')
-        .notEmpty().withMessage('El tipo de usuario no puede estar vacío'),
     body("contrasena")
         .isString().withMessage('La contraseña debe ser una cadena de texto')
         .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
         .notEmpty().withMessage('La contraseña no puede estar vacía'),
-    body("carreraId")
-        .isInt().withMessage('El ID de la carrera debe ser un número entero')
-        .notEmpty().withMessage('El ID de la carrera no puede estar vacío'),
+    body("nombre_carrera")
+        .isString().withMessage('El nombre de la carrera debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío'),
     controladorEstudiante.guardar
 );
 
@@ -176,12 +175,12 @@ rutas.post(
  *           schema:
  *             type: object
  *             properties:
- *               nombre_estudiante:
+ *               primerNombre:
  *                 type: string
- *                 description: Nombre del estudiante.
- *               apellido_estudiante:
+ *                 description: Primer nombre del estudiante.
+ *               primerApellido:
  *                 type: string
- *                 description: Apellido del estudiante.
+ *                 description: Primer apellido del estudiante.
  *               email:
  *                 type: string
  *                 description: Email del estudiante.
@@ -224,14 +223,7 @@ rutas.post(
  *         description: Error en el servidor al editar el estudiante.
  */
 rutas.put('/editar',
-    query("id")
-        .isInt().withMessage("El id del estudiante debe ser un entero")
-        .custom(async value => {
-            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id: value } });
-            if (!buscarEstudiante) {
-                throw new Error('El id del estudiante no existe');
-            }
-        }),
+    query("id_estudiante").isInt().withMessage("El id del estudiante debe ser un entero"),
     body('primerNombre').notEmpty().withMessage('El primer nombre es obligatorio')
         .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
     body('primerApellido').notEmpty().withMessage('El primer apellido es obligatorio')
@@ -239,34 +231,10 @@ rutas.put('/editar',
     body("email")
         .isEmail().withMessage('El email debe ser una dirección de correo válida')
         .notEmpty().withMessage('El email no puede estar vacío'),
-    body("carreraId")
-        .isInt().withMessage('El ID de la carrera debe ser un número entero')
-        .notEmpty().withMessage('El ID de la carrera no puede estar vacío'),
+    body("nombre_carrera")
+        .isString().withMessage('El nombre de la carrera debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío'),
     controladorEstudiante.editar
-);
-
-/**
- * @swagger
- * /estudiantes/eliminar:
- *   delete:
- *     summary: Elimina un Estudiante
- *     tags: [Estudiantes]
- *     parameters:
- *       - in: query
- *         name: id_estudiante
- *         required: true
- *         schema:
- *           type: integer
- *           description: ID del estudiante a eliminar
- *     responses:
- *       200:
- *         description: Estudiante eliminado
- *       400:
- *         description: Error en los datos proporcionados
- */
-rutas.delete('/eliminar',
-    query("id_estudiante").isInt().withMessage('El id del estudiante debe ser un entero'),
-    controladorEstudiante.eliminar
 );
 
 module.exports = rutas;

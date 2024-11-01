@@ -19,18 +19,22 @@ exports.listar = async (req, res) => {
     const data = await ModeloEstudiante.findAll({
       include: [
         {
+          model: ModeloUsuario,
+          attributes: ['email'] // Solo incluir el email del usuario
+        },
+        {
           model: ModeloCarrera,
-          attributes: ['nombre_carrera']
+          attributes: ['nombre_carrera'] // Incluir el nombre de la carrera
         }
       ]
     });
 
     contenido.tipo = 1;
     contenido.datos = data.map(estudiante => ({
-      id_estudiante: estudiante.id_estudiante,
-      nombre_estudiante: estudiante.nombre,
-      apellido_estudiante: estudiante.apellido,
-      email: estudiante.email,
+      id_estudiante: estudiante.id, // Cambia 'id_estudiante' a 'id'
+      primerNombre: estudiante.primerNombre,
+      primerApellido: estudiante.primerApellido,
+      email: estudiante.Usuario ? estudiante.Usuario.email : 'Email no asignado', // Asegurarse de acceder al email correctamente
       nombre_carrera: estudiante.Carrera ? estudiante.Carrera.nombre_carrera : 'Carrera no asignada'
     }));
     enviar(200, contenido, res);
@@ -42,36 +46,55 @@ exports.listar = async (req, res) => {
   }
 };
 
+
 exports.guardar = async (req, res) => {
-  // Validar entrada de datos
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json(errors.array());
   }
+
   const t = await db.transaction();
   try {
-    const { nombre, email, tipoUsuario, contrasena, carreraId } = req.body;
+    const { primerNombre, primerApellido, email, contrasena, nombre_carrera } = req.body;
+    const nombre = `${primerNombre} ${primerApellido}`;
     const hash = await argon2.hash(contrasena, {
       type: argon2.argon2id,
-      memoryCost: 2 ** 16, // 64MB
+      memoryCost: 2 ** 16,
       timeCost: 4,
       parallelism: 2,
     });
-    // Crear el usuario del cliente
+
+    // Establecer tipoUsuario como 'Estudiante'
+    const tipoUsuario = 'Estudiante';
+
     const usuario = await ModeloUsuario.create(
       { nombre, email, tipoUsuario, contrasena: hash },
-      { transaction: t });
+      { transaction: t }
+    );
 
-    // Crear el cliente
-    const estudiante = await ModeloEstudiante.create({ ...req.body, usuarioId: usuario.id, carreraId: carreraId }, { transaction: t });
+    const estudiante = await ModeloEstudiante.create(
+      {
+        primerNombre,
+        primerApellido,
+        email,
+        tipoUsuario, // Puedes eliminar esta línea si no necesitas guardar el tipo en ModeloEstudiante
+        nombre_carrera,
+        usuarioId: usuario.id,
+      },
+      { transaction: t }
+    );
+
     await t.commit();
     res.status(201).json(estudiante);
   } catch (error) {
     console.error(error);
     await t.rollback();
-    res.status(500).json({ error: 'Error al crear el cliente' });
+    res.status(500).json({ error: 'Error al crear el estudiante' });
   }
 };
+
+
+
 
 
 exports.editar = async (req, res) => {

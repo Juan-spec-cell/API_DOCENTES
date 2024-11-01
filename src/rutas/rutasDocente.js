@@ -2,6 +2,7 @@ const express = require('express');
 const { body, query } = require('express-validator');
 const controladorDocente = require('../controladores/controladorDocente');
 const ModeloDocente = require('../modelos/docente');
+const { Op } = require('sequelize'); // Asegúrate de importar Op para usar en las validaciones
 const rutas = express.Router();
 
 /**
@@ -32,8 +33,45 @@ rutas.get('/', controladorDocente.inicio);
  *     responses:
  *       200:
  *         description: Lista de docentes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                   description: Indica el tipo de respuesta (1 = éxito, 0 = error)
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id_docente:
+ *                         type: integer
+ *                         description: ID del docente
+ *                       primerNombre:
+ *                         type: string
+ *                         description: Primer nombre del docente
+ *                       segundoNombre:
+ *                         type: string
+ *                         description: Segundo nombre del docente
+ *                       primerApellido:
+ *                         type: string
+ *                         description: Primer apellido del docente
+ *                       segundoApellido:
+ *                         type: string
+ *                         description: Segundo apellido del docente
+ *                       email:
+ *                         type: string
+ *                         description: Correo electrónico del docente
+ *                 msj:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   description: Mensajes relacionados con la respuesta
  */
 rutas.get('/listar', controladorDocente.listar);
+
 
 /**
  * @swagger
@@ -48,37 +86,46 @@ rutas.get('/listar', controladorDocente.listar);
  *           schema:
  *             type: object
  *             properties:
- *               nombre_docente:
+ *               primerNombre:
  *                 type: string
- *                 description: Nombre del docente
- *               apellido_docente:
+ *                 description: Primer nombre del docente
+ *               segundoNombre:
  *                 type: string
- *                 description: Apellido del docente
+ *                 description: Segundo nombre del docente
+ *               primerApellido:
+ *                 type: string
+ *                 description: Primer apellido del docente
+ *               segundoApellido:
+ *                 type: string
+ *                 description: Segundo apellido del docente
  *               email:
  *                 type: string
  *                 description: Correo electrónico del docente
+ *               contrasena:
+ *                 type: string
+ *                 description: Contraseña del docente
  *     responses:
- *       200:
+ *       201:
  *         description: Docente guardado
- *       404:
- *         description: Usuario no encontrado
  *       400:
  *         description: Error en los datos proporcionados
  */
 rutas.post('/guardar',
     body('primerNombre').notEmpty().withMessage('El primer nombre es obligatorio')
         .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
+    body('segundoNombre').optional().isLength({ max: 50 }).withMessage('El segundo nombre no puede exceder los 50 caracteres'),
     body('primerApellido').notEmpty().withMessage('El primer apellido es obligatorio')
         .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
-    body("nombre")
-        .isString().withMessage('El nombre del usuario debe ser una cadena de texto')
-        .notEmpty().withMessage('El nombre del usuario no puede estar vacío'),
+    body('segundoApellido').optional().isLength({ max: 50 }).withMessage('El segundo apellido no puede exceder los 50 caracteres'),
     body("email")
         .isEmail().withMessage('El correo electrónico debe ser válido')
-        .notEmpty().withMessage('El correo no puede estar vacío'),
-    body("tipoUsuario")
-        .isIn(['Estudiante', 'Docente']).withMessage('El tipo de usuario debe ser "Estudiante" o "Docente"')
-        .notEmpty().withMessage('El tipo de usuario no puede estar vacío'),
+        .notEmpty().withMessage('El correo no puede estar vacío')
+        .custom(async (value) => {
+            const buscarDocente = await ModeloDocente.findOne({ where: { email: value } });
+            if (buscarDocente) {
+                throw new Error('El correo electrónico ya está en uso por otro docente');
+            }
+        }),
     body("contrasena")
         .isString().withMessage('La contraseña debe ser una cadena de texto')
         .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
@@ -94,7 +141,7 @@ rutas.post('/guardar',
  *     tags: [Docentes]
  *     parameters:
  *       - in: query
- *         name: id_docente
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -106,12 +153,18 @@ rutas.post('/guardar',
  *           schema:
  *             type: object
  *             properties:
- *               nombre_docente:
+ *               primerNombre:
  *                 type: string
- *                 description: Nombre del docente
- *               apellido_docente:
+ *                 description: Primer nombre del docente
+ *               segundoNombre:
  *                 type: string
- *                 description: Apellido del docente
+ *                 description: Segundo nombre del docente
+ *               primerApellido:
+ *                 type: string
+ *                 description: Primer apellido del docente
+ *               segundoApellido:
+ *                 type: string
+ *                 description: Segundo apellido del docente
  *               email:
  *                 type: string
  *                 description: Correo electrónico del docente
@@ -119,7 +172,7 @@ rutas.post('/guardar',
  *       200:
  *         description: Docente editado
  *       404:
- *         description: Docente o usuario no encontrado
+ *         description: Docente no encontrado
  *       400:
  *         description: Error en los datos proporcionados
  */
@@ -128,16 +181,31 @@ rutas.put('/editar',
         .custom(async value => {
             const buscarDocente = await ModeloDocente.findOne({ where: { id: value } });
             if (!buscarDocente) {
-                throw new Error('El id del estudiante no existe');
+                throw new Error('El id del docente no existe');
             }
         }),
     body('primerNombre').notEmpty().withMessage('El primer nombre es obligatorio')
         .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
+    body('segundoNombre').optional().isLength({ max: 50 }).withMessage('El segundo nombre no puede exceder los 50 caracteres'),
     body('primerApellido').notEmpty().withMessage('El primer apellido es obligatorio')
         .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
-    body("email")
-        .optional()
-        .isEmail().withMessage('Debe ser un correo electrónico válido'),
+    body('segundoApellido').optional().isLength({ max: 50 }).withMessage('El segundo apellido no puede exceder los 50 caracteres'),
+    body("email").optional()
+        .isEmail().withMessage('Debe ser un correo electrónico válido')
+        .custom(async (value, { req }) => {
+            if (value) {
+                const buscarDocente = await ModeloDocente.findOne({
+                    where: {
+                        email: value,
+                        id: { [Op.ne]: req.query.id } // Excluir el docente que se está editando
+                    }
+                });
+                if (buscarDocente) {
+                    throw new Error('El correo electrónico ya está en uso por otro docente');
+                }
+            }
+            return true;
+        }),
     controladorDocente.editar
 );
 
@@ -149,7 +217,7 @@ rutas.put('/editar',
  *     tags: [Docentes]
  *     parameters:
  *       - in: query
- *         name: id_docente
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -194,11 +262,11 @@ rutas.get('/busqueda/id', controladorDocente.busqueda_id);
  *     tags: [Docentes]
  *     parameters:
  *       - in: query
- *         name: nombre
+ *         name: primerNombre
  *         required: true
  *         schema:
  *           type: string
- *           description: Nombre del docente a buscar
+ *           description: Primer nombre del docente a buscar
  *     responses:
  *       200:
  *         description: Docente encontrado

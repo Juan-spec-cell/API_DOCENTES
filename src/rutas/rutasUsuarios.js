@@ -1,8 +1,8 @@
 const { Router } = require('express');
 const { body, query } = require('express-validator');
-const controladorUsuario = require('../controladores/controladorUsuario'); // Asegúrate de que este controlador existe
+const controladorUsuario = require('../controladores/controladorUsuario');
+const ModeloUsuario = require('../modelos/usuario'); 
 const rutas = Router();
-const Usuario = require('../modelos/usuario');
 
 /**
  * @swagger
@@ -15,11 +15,11 @@ const Usuario = require('../modelos/usuario');
  * @swagger
  * /usuarios:
  *   get:
- *     summary: Inicializa el controlador de usuarios
+ *     summary: Muestra un mensaje de bienvenida
  *     tags: [Usuarios]
  *     responses:
  *       200:
- *         description: Controlador inicializado
+ *         description: Mensaje de bienvenida de la API.
  */
 rutas.get('/', controladorUsuario.inicio);
 
@@ -48,22 +48,15 @@ rutas.get('/', controladorUsuario.inicio);
  *                       id_usuario:
  *                         type: integer
  *                         description: ID del usuario.
- *                       nombre_usuario:
+ *                       nombre:
  *                         type: string
  *                         description: Nombre del usuario.
- *                       apellido_usuario:
- *                         type: string
- *                         description: Apellido del usuario.
  *                       email:
  *                         type: string
- *                         description: Correo electrónico del usuario.
- *                       contraseña_usuario:
- *                         type: string
- *                         description: Contraseña del usuario.
+ *                         description: Email del usuario.
  *                       tipoUsuario:
  *                         type: string
- *                         enum: [Estudiante, Docente]
- *                         description: Tipo de usuario.
+ *                         description: Tipo de usuario (Docente o Estudiante).
  *                 msj:
  *                   type: array
  *                   items:
@@ -73,145 +66,72 @@ rutas.get('/', controladorUsuario.inicio);
  */
 rutas.get('/listar', controladorUsuario.listar);
 
-/**
- * @swagger
- * /usuarios/guardar:
- *   post:
- *     summary: Guarda un nuevo usuario
- *     tags: [Usuarios]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nombre_usuario:
- *                 type: string
- *                 description: Nombre del usuario
- *               apellido_usuario:
- *                 type: string
- *                 description: Apellido del usuario
- *               email:
- *                 type: string
- *                 description: Correo electrónico del usuario
- *               contraseña_usuario:
- *                 type: string
- *                 description: Contraseña del usuario
- *               tipoUsuario:
- *                 type: string
- *                 enum: [Estudiante, Docente]
- *                 description: Tipo de usuario
- *     responses:
- *       200:
- *         description: Usuario guardado
- *       400:
- *         description: Error en los datos proporcionados
- */
-rutas.post('/guardar',
-    body("nombre_usuario").isString().withMessage('El nombre del usuario debe ser una cadena de texto'),
-    body("apellido_usuario").isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
-    body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
-    body("contraseña_usuario").isString().withMessage('La contraseña no puede estar vacía'),
-    body("tipoUsuario").customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
-        .isIn(['Estudiante', 'Docente']).withMessage('El tipo de usuario debe ser "Estudiante" o "Docente"'),
-    controladorUsuario.guardar
-);
 
-/**
- * @swagger
- * /usuarios/editar:
- *   put:
- *     summary: Edita un usuario existente
- *     tags: [Usuarios]
- *     parameters:
- *       - in: query
- *         name: id_usuario
- *         required: true
- *         schema:
- *           type: integer
- *           description: ID del usuario a editar
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nombre_usuario:
- *                 type: string
- *                 description: Nombre del usuario (opcional)
- *               apellido_usuario:
- *                 type: string
- *                 description: Apellido del usuario (opcional)
- *               email:
- *                 type: string
- *                 description: Correo electrónico del usuario (opcional)
- *               contraseña_usuario:
- *                 type: string
- *                 description: Contraseña del usuario (opcional)
- *               tipoUsuario:
- *                 type: string
- *                 enum: [Estudiante, Docente]
- *                 description: Tipo de usuario (opcional)
- *     responses:
- *       200:
- *         description: Usuario editado
- *       400:
- *         description: Error en los datos proporcionados
- */
-rutas.put('/editar',
+/*rutas.post('/guardar',
+    body("nombre")
+        .notEmpty().withMessage('El nombre es obligatorio'),
+    body("email")
+        .isEmail().withMessage('El email debe ser válido'),
+    body("contrasena")
+        .notEmpty().withMessage('La contraseña es obligatoria'),
+    body("tipoUsuario")
+        .notEmpty().withMessage('El tipo de usuario es obligatorio'),
+    controladorUsuario.guardar
+);*/
+
+
+/*rutas.put('/editar',
     query("id_usuario")
         .isInt().withMessage("El id del usuario debe ser un entero")
         .custom(async value => {
-            if (!value) {
-                throw new Error('El id no permite valores nulos');
-            } else {
-                const buscarUsuario = await controladorUsuario.buscarPorId(value);
-                if (!buscarUsuario) {
-                    throw new Error('El id del usuario no existe');
-                }
+            const buscarUsuario = await ModeloUsuario.findOne({ where: { id_usuario: value } });
+            if (!buscarUsuario) {
+                throw new Error('El id del usuario no existe');
             }
         }),
-    body("nombre_usuario").optional().isString().withMessage('El nombre del usuario debe ser una cadena de texto'),
-    body("apellido_usuario").optional().isString().withMessage('El apellido del usuario debe ser una cadena de texto'),
-    body("email").optional().isEmail().withMessage('El correo electrónico debe ser válido'),
-    body("contraseña_usuario").optional().isString().withMessage('La contraseña no puede estar vacía'),
-    body("tipoUsuario").optional().customSanitizer(value => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase())
-        .isIn(['Estudiante', 'Docente']).withMessage('El tipo de usuario debe ser "Estudiante" o "Docente"'),
+    body("nombre")
+        .optional()
+        .notEmpty().withMessage('El nombre no puede estar vacío'),
+    body("email")
+        .optional()
+        .isEmail().withMessage('El email debe ser válido'),
+    body("contrasena")
+        .optional()
+        .notEmpty().withMessage('La contraseña no puede estar vacía'),
+    body("tipoUsuario")
+        .optional()
+        .notEmpty().withMessage('El tipo de usuario no puede estar vacío'),
     controladorUsuario.editar
-);
+);*/
 
 /**
  * @swagger
  * /usuarios/eliminar:
  *   delete:
- *     summary: Elimina un usuario
+ *     summary: Elimina un usuario existente
  *     tags: [Usuarios]
  *     parameters:
  *       - in: query
- *         name: id_usuario
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *           description: ID del usuario a eliminar
+ *         description: ID del usuario a eliminar.
  *     responses:
  *       200:
- *         description: Usuario eliminado
- *       400:
- *         description: Error en los datos proporcionados
+ *         description: Usuario eliminado correctamente.
+ *       404:
+ *         description: El ID del usuario no existe.
+ *       500:
+ *         description: Error en el servidor al eliminar el usuario.
  */
 rutas.delete('/eliminar',
-    query("id_usuario")
+    query("id")
         .isInt().withMessage("El id del usuario debe ser un entero")
         .custom(async value => {
-            if (!value) {
-                throw new Error('El id no permite valores nulos');
-            } else {
-                const buscarUsuario = await controladorUsuario.buscarPorId(value);
-                if (!buscarUsuario) {
-                    throw new Error('El id del usuario no existe');
-                }
+            const buscarUsuario = await ModeloUsuario.findOne({ where: { id: value } }); // Asegúrate de que el campo sea 'id'
+            if (!buscarUsuario) {
+                throw new Error('El id del usuario no existe');
             }
         }),
     controladorUsuario.eliminar
@@ -219,87 +139,9 @@ rutas.delete('/eliminar',
 
 /**
  * @swagger
- * /usuarios/recuperar:
+ * /usuarios/iniciar-sesion:
  *   post:
- *     summary: Recupera la contraseña de un usuario
- *     tags: [Usuarios]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 description: Correo electrónico del usuario
- *     responses:
- *       200:
- *         description: Correo enviado correctamente
- *       400:
- *         description: Error en los datos proporcionados
- *       404:
- *         description: Usuario no encontrado
- *       500:
- *         description: Error al actualizar el usuario
- */
-rutas.post('/recuperar',
-    body('email').isEmail().withMessage('Debe enviar un correo valido')
-        .custom(async (value) => {
-            if (value) {
-                const buscarUsuario = await Usuario.findOne({ where: { email: value } });
-                if (!buscarUsuario) {
-                    throw new Error('Usuario no encontrado');
-                }
-            }
-        }),
-    controladorUsuario.recuperarContrasena
-);
-
-/**
- * @swagger
- * /usuarios/actualizarContrasena:
- *   post:
- *     summary: Actualiza la contraseña de un usuario
- *     tags: [Usuarios]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 description: Correo electrónico del usuario
- *               contrasena:
- *                 type: string
- *                 description: Nueva contraseña del usuario
- *               pin:
- *                 type: string
- *                 description: PIN de recuperación
- *     responses:
- *       200:
- *         description: Contraseña actualizada correctamente
- *       400:
- *         description: Error en los datos proporcionados
- *       404:
- *         description: Usuario no encontrado
- *       500:
- *         description: Error al actualizar el usuario
- */
-rutas.post('/actualizar',
-    body('email').isEmail().withMessage('El correo electrónico debe ser válido'),
-    body('pin').isLength({ min: 6, max: 6 }).isHexadecimal().withMessage('El pin contiene un valor incorrecto'),
-    body('contrasena').isString().withMessage('La contraseña no puede estar vacía'),
-    controladorUsuario.actualizarContrasena
-);
-
-/**
- * @swagger
- * /usuarios/iniciarSesion:
- *   post:
- *     summary: Inicia sesión de un usuario
+ *     summary: Iniciar sesión
  *     tags: [Usuarios]
  *     requestBody:
  *       required: true
@@ -310,24 +152,94 @@ rutas.post('/actualizar',
  *             properties:
  *               login:
  *                 type: string
- *                 description: Correo electrónico o nombre de usuario
+ *                 description: Email o nombre del usuario.
  *               contrasena:
  *                 type: string
- *                 description: Contraseña del usuario
+ *                 description: Contraseña del usuario.
  *     responses:
  *       200:
- *         description: Sesión iniciada correctamente
- *       400:
- *         description: Error en los datos proporcionados
+ *         description: Inicio de sesión exitoso.
  *       404:
- *         description: Usuario no encontrado
+ *         description: Usuario o contraseña incorrectos.
  *       500:
- *         description: Error al iniciar sesión
+ *         description: Error al iniciar sesión.
  */
-rutas.post('/iniciarSesion',
-    body("login").isString().withMessage('El login debe ser una cadena de texto'),
-    body("contrasena").isString().withMessage('La contraseña no puede estar vacía'),
+rutas.post('/iniciar-sesion',
+    body("login")
+        .notEmpty().withMessage('El login es obligatorio'),
+    body("contrasena")
+        .notEmpty().withMessage('La contraseña es obligatoria'),
     controladorUsuario.iniciarSesion
+);
+
+/**
+ * @swagger
+ * /usuarios/recuperar-contrasena:
+ *   post:
+ *     summary: Recuperar contraseña
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Email del usuario.
+ *     responses:
+ *       200:
+ *         description: Correo enviado correctamente.
+ *       404:
+ *         description: Usuario no encontrado.
+ *       500:
+ *         description: Error al enviar el correo.
+ */
+rutas.post('/recuperar-contrasena',
+    body("email")
+        .isEmail().withMessage('El email debe ser válido'),
+    controladorUsuario.recuperarContrasena
+);
+
+/**
+ * @swagger
+ * /usuarios/actualizar-contrasena:
+ *   put:
+ *     summary: Actualizar contraseña
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Email del usuario.
+ *               contrasena:
+ *                 type: string
+ *                 description: Nueva contraseña.
+ *               pin:
+ *                 type: string
+ *                 description: PIN recibido por correo.
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada correctamente.
+ *       404:
+ *         description: Usuario no encontrado o PIN incorrecto.
+ *       500:
+ *         description: Error al actualizar la contraseña.
+ */
+rutas.put('/actualizar-contrasena',
+    body("email")
+        .isEmail().withMessage('El email debe ser válido'),
+    body("contrasena")
+        .notEmpty().withMessage('La nueva contraseña es obligatoria'),
+    body("pin")
+        .notEmpty().withMessage('El PIN es obligatorio'),
+    controladorUsuario.actualizarContrasena
 );
 
 module.exports = rutas;

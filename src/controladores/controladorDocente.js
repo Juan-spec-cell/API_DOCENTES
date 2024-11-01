@@ -19,9 +19,9 @@ exports.listar = async (req, res) => {
 
         contenido.tipo = 1;
         contenido.datos = data.map(docente => ({
-            id_docente: docente.id_docente,
-            nombre_docente: docente.nombre,
-            apellido_docente: docente.apellido,
+            id_docente: docente.id, 
+            primerNombre: docente.primerNombre,
+            primerApellido: docente.primerApellido,
             email: docente.email
         }));
         enviar(200, contenido, res);
@@ -33,36 +33,53 @@ exports.listar = async (req, res) => {
     }
 };
 
+
 exports.guardar = async (req, res) => {
     // Validar entrada de datos
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json(errors.array());
     }
+    
     const t = await db.transaction();
     try {
-        const { nombre, email, tipoUsuario, contrasena } = req.body;
+        const { primerNombre, segundoNombre, primerApellido, segundoApellido, email, contrasena } = req.body;
+        
+        // Hashear la contraseña
         const hash = await argon2.hash(contrasena, {
             type: argon2.argon2id,
             memoryCost: 2 ** 16, // 64MB
             timeCost: 4,
             parallelism: 2,
         });
-        // Crear el usuario del cliente
-        const usuario = await ModeloUsuario.create(
-            { nombre, email, tipoUsuario, contrasena: hash },
-            { transaction: t });
 
-        // Crear el cliente
-        const docente = await ModeloDocente.create({ ...req.body, usuarioId: usuario.id }, { transaction: t });
+        // Crear el usuario con tipoUsuario como 'docente'
+        const usuario = await ModeloUsuario.create(
+            { 
+                nombre: `${primerNombre} ${segundoNombre || ''} ${primerApellido} ${segundoApellido || ''}`, 
+                email, 
+                tipoUsuario: 'Docente', // Asignar tipo 'docente' por defecto
+                contrasena: hash 
+            },
+            { transaction: t }
+        );
+
+        // Crear el docente
+        const docente = await ModeloDocente.create(
+            { primerNombre, segundoNombre, primerApellido, segundoApellido, email, usuarioId: usuario.id },
+            { transaction: t }
+        );
+
         await t.commit();
         res.status(201).json(docente);
     } catch (error) {
         console.error(error);
         await t.rollback();
-        res.status(500).json({ error: 'Error al crear el cliente' });
+        res.status(500).json({ error: error.message || 'Error al crear el docente' });
     }
 };
+
+
 
 exports.editar = async (req, res) => {
     // Validar la entrada de datos

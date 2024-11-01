@@ -6,7 +6,7 @@ const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const db = require('./configuracion/db');
 const swagger = require('./documentacion/swagger');
-const sincronizarModelos = require('./configuracion/sincronizar_modelos'); // Asegúrate de que esta ruta sea correcta
+const sincronizarModelos = require('./configuracion/sincronizar_modelos');
 const passport = require('passport');
 
 const PORT = process.env.PORT || 3002;
@@ -33,7 +33,7 @@ const limitador = rateLimit({
 });
 app.use(limitador);
 
-// Rutas sin protección
+
 app.use('/api/carreras', require('./rutas/rutasCarrera'));
 app.use('/api/docentes', require('./rutas/rutasDocente'));
 app.use('/api/asignaturas', require('./rutas/rutasAsignatura'));
