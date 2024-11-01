@@ -1,12 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../configuracion/db');
+const asignatura = require('./asignatura');
 
-const Actividad = sequelize.define('Actividad', {
-    id_actividad: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
+const actividad = sequelize.define('Actividad', {
     tipo_actividad: {
         type: DataTypes.STRING,
         allowNull: false
@@ -15,17 +11,10 @@ const Actividad = sequelize.define('Actividad', {
         type: DataTypes.DATE,
         allowNull: false
     },
-    id_asignatura: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    }
 }, {
     tableName: 'actividades'
 });
+asignatura.hasMany(actividad, { foreignKey: 'asignaturaId' });
+actividad.belongsTo(asignatura, { foreignKey: 'asignaturaId' });
 
-// Definición de las relaciones
-Actividad.associate = (models) => {
-    Actividad.belongsTo(models.Asignatura, { foreignKey: 'id_asignatura' });
-};
-
-module.exports = Actividad;
+module.exports = actividad;

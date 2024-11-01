@@ -2,6 +2,7 @@ const { Router } = require('express');
 const { body, query } = require('express-validator');
 const controladorUsuario = require('../controladores/controladorUsuario'); // Asegúrate de que este controlador existe
 const rutas = Router();
+const Usuario = require('../modelos/usuario');
 
 /**
  * @swagger
@@ -243,7 +244,15 @@ rutas.delete('/eliminar',
  *         description: Error al actualizar el usuario
  */
 rutas.post('/recuperar',
-    body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
+    body('email').isEmail().withMessage('Debe enviar un correo valido')
+        .custom(async (value) => {
+            if (value) {
+                const buscarUsuario = await Usuario.findOne({ where: { email: value } });
+                if (!buscarUsuario) {
+                    throw new Error('Usuario no encontrado');
+                }
+            }
+        }),
     controladorUsuario.recuperarContrasena
 );
 
@@ -279,10 +288,10 @@ rutas.post('/recuperar',
  *       500:
  *         description: Error al actualizar el usuario
  */
-rutas.post('/actualizar/contrasena',
-    body("email").isEmail().withMessage('El correo electrónico debe ser válido'),
-    body("contrasena").isString().withMessage('La contraseña no puede estar vacía'),
-    body("pin").isLength({ min: 6, max: 6 }).isHexadecimal().withMessage('El pin contiene un valor incorrecto'),
+rutas.post('/actualizar',
+    body('email').isEmail().withMessage('El correo electrónico debe ser válido'),
+    body('pin').isLength({ min: 6, max: 6 }).isHexadecimal().withMessage('El pin contiene un valor incorrecto'),
+    body('contrasena').isString().withMessage('La contraseña no puede estar vacía'),
     controladorUsuario.actualizarContrasena
 );
 

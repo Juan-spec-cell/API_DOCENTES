@@ -1,54 +1,42 @@
 const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
+const usuario = require('./usuario');
+const carrera = require('./carrera');
+const { escape } = require('mysql2');
 
-const Estudiante = db.define(
+const estudiante = db.define(
   "Estudiante",
   {
-    id_estudiante: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+    primerNombre: {
+      type: DataTypes.STRING(50),
       allowNull: false,
     },
-    id_usuario: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'usuarios',
-        key: 'id_usuario',
-      }
+    segundoNombre: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
     },
-    nombre: {
-      type: DataTypes.STRING(100),
+    primerApellido: {
+      type: DataTypes.STRING(50),
       allowNull: false,
     },
-    apellido: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+    segundoApellido: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
     },
     email: {
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
     },
-    id_carrera: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'carreras',
-        key: 'id_carrera',
-      }
-    }
   },
   {
     tableName: "estudiantes"
   }
 );
+usuario.hasMany(estudiante, { foreignKey: 'usuarioId' });
+estudiante.belongsTo(usuario, { foreignKey: 'usuarioId' });
 
-// Definimos las relaciones en este método
-Estudiante.associate = (models) => {
-    Estudiante.belongsTo(models.Carrera, { foreignKey: 'id_carrera' });
-    Estudiante.hasMany(models.Matricula, { foreignKey: 'id_estudiante' });
-};
+carrera.hasMany(estudiante, { foreignKey: 'carreraId' });
+estudiante.belongsTo(carrera, { foreignKey: 'carreraId' });
 
-module.exports = Estudiante;
+module.exports = estudiante;

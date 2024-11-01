@@ -18,8 +18,8 @@ const modelos = {
     Asignatura: ModeloAsignatura,
     Calificacion: ModeloCalificacion,
     Asistencia: ModeloAsistencia,
-    Matricula: ModeloMatricula,
     Periodo: ModeloPeriodo,
+    Matricula: ModeloMatricula,
     Actividad: ModeloActividad,
     Usuarios: ModeloUsuarios,
 };
@@ -35,16 +35,15 @@ async function sincronizarModelos() {
     try {
         // Sincroniza los modelos en el orden correcto
         await modelos.Usuarios.sync();
-        await modelos.Periodo.sync();
-        await modelos.Carrera.sync();
         await modelos.Docente.sync();
+        await modelos.Carrera.sync();
         await modelos.Estudiante.sync();
-        await modelos.Asignatura.sync();
-        await modelos.Calificacion.sync();
-        await modelos.Asistencia.sync();
+        await modelos.Periodo.sync();
         await modelos.Matricula.sync();
+        await modelos.Asignatura.sync();
         await modelos.Actividad.sync();
-
+        await modelos.Asistencia.sync();
+        await modelos.Calificacion.sync();
         console.log("Todos los modelos fueron sincronizados correctamente");
     } catch (error) {
         console.error("Error al sincronizar uno o más modelos:", error);

@@ -5,7 +5,8 @@ const { Sequelize } = require('sequelize');
 const db = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT, // Agrega esta línea para el puerto
-    dialect: process.env.DB_DIALECT, // Utiliza el dialecto desde el .env
+    dialect: process.env.DB_DIALECT,
+    logging: false,// Utiliza el dialecto desde el .env
 });
 
 module.exports = db;
