@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
 const usuario = require('./usuario');
 const carrera = require('./carrera');
-const { escape } = require('mysql2');
+
 
 const estudiante = db.define(
   "Estudiante",

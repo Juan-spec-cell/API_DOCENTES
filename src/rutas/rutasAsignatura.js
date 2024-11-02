@@ -2,8 +2,7 @@ const { Router } = require('express');
 const { body, query } = require('express-validator');
 const controladorAsignatura = require('../controladores/controladorAsignatura'); 
 const ModeloAsignatura = require('../modelos/asignatura');
-const ModeloDocente = require('../modelos/docente');
-const ModeloCarrera = require('../modelos/carrera');
+
 
 const rutas = Router();
 
@@ -11,18 +10,18 @@ const rutas = Router();
  * @swagger
  * tags:
  *   name: Asignaturas
- *   description: Gestión de Asignaturas
+ *   description: Gestión de asignaturas
  */
 
 /**
  * @swagger
  * /asignaturas:
  *   get:
- *     summary: Obtener la página de inicio de asignaturas
+ *     summary: Muestra un mensaje de bienvenida
  *     tags: [Asignaturas]
  *     responses:
  *       200:
- *         description: Página de inicio de asignaturas
+ *         description: Mensaje de bienvenida de la API.
  */
 rutas.get('/', controladorAsignatura.inicio);
 
@@ -30,30 +29,39 @@ rutas.get('/', controladorAsignatura.inicio);
  * @swagger
  * /asignaturas/listar:
  *   get:
- *     summary: Listar todas las asignaturas
+ *     summary: Lista todas las asignaturas
  *     tags: [Asignaturas]
  *     responses:
  *       200:
- *         description: Lista de asignaturas
+ *         description: Lista de asignaturas.
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                     description: ID de la asignatura
- *                   id_asignatura:
- *                     type: integer
- *                     description: Identificador de la asignatura
- *                   nombre_asignatura:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                   description: Tipo de respuesta, donde 0 indica error y 1 indica éxito.
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: ID de la asignatura.
+ *                       nombre_asignatura:
+ *                         type: string
+ *                         description: Nombre de la asignatura.
+ *                       nombre_docente:
+ *                         type: string
+ *                         description: Nombre del docente.
+ *                 msj:
+ *                   type: array
+ *                   items:
  *                     type: string
- *                   nombre_docente:
- *                     type: string
- *                   nombre_carrera:
- *                     type: string
+ *       500:
+ *         description: Error al cargar los datos de asignaturas.
  */
 rutas.get('/listar', controladorAsignatura.listar);
 
@@ -61,7 +69,7 @@ rutas.get('/listar', controladorAsignatura.listar);
  * @swagger
  * /asignaturas/guardar:
  *   post:
- *     summary: Crea una nueva asignatura
+ *     summary: Guarda una nueva asignatura
  *     tags: [Asignaturas]
  *     requestBody:
  *       required: true
@@ -73,61 +81,45 @@ rutas.get('/listar', controladorAsignatura.listar);
  *               nombre_asignatura:
  *                 type: string
  *                 description: Nombre de la asignatura.
- *                 example: Matemáticas
- *               primerNombre_docente:
- *                 type: string
- *                 description: Primer nombre del docente.
- *                 example: Juan
- *               primerApellido_docente:
- *                 type: string
- *                 description: Primer apellido del docente.
- *                 example: Pérez
- *               nombre_carrera:
- *                 type: string
- *                 description: Nombre de la carrera.
- *                 example: Ingeniería en Sistemas
+ *               docenteId:
+ *                 type: integer
+ *                 description: ID del docente.
  *     responses:
- *       201:
- *         description: Asignatura creada exitosamente.
+ *       200:
+ *         description: Asignatura guardada correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: object
+ *                   properties:
+ *                     id_asignatura:
+ *                       type: integer
+ *                       description: ID de la nueva asignatura.
+ *                     nombre_asignatura:
+ *                       type: string
+ *                       description: Nombre de la asignatura.
+ *                     docenteId:
+ *                       type: integer
+ *                       description: ID del docente.
+ *                 msj:
+ *                   type: string
  *       400:
- *         description: Error de validación, el docente o la carrera no existen.
+ *         description: Error en la validación de datos.
  *       500:
- *         description: Error interno del servidor.
+ *         description: Error en el servidor al guardar la asignatura.
  */
 rutas.post('/guardar',
     body("nombre_asignatura")
-        .isLength({ min: 3, max: 100 }).withMessage('El nombre de la asignatura debe tener entre 3 y 100 caracteres')
-        .notEmpty().withMessage('El nombre de la asignatura no permite valores nulos')
-        .custom(async value => {
-            const buscarAsignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura: value } });
-            if (buscarAsignatura) {
-                throw new Error('El nombre de la asignatura ya existe');
-            }
-        }),
-    body("primerNombre_docente")
-        .notEmpty().withMessage('El nombre del docente no puede estar vacío')
-        .custom(async value => {
-            const docenteExistente = await ModeloDocente.findOne({ where: { primerNombre: value } });
-            if (!docenteExistente) {
-                throw new Error('El nombre del docente no existe');
-            }
-        }),
-    body("primerApellido_docente")
-        .notEmpty().withMessage('El apellido del docente no puede estar vacío')
-        .custom(async value => {
-            const docenteExistente = await ModeloDocente.findOne({ where: { primerApellido: value } });
-            if (!docenteExistente) {
-                throw new Error('El apellido del docente no existe');
-            }
-        }),
-    body("nombre_carrera")
-        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío')
-        .custom(async value => {
-            const carreraExistente = await ModeloCarrera.findOne({ where: { nombre_carrera: value } });
-            if (!carreraExistente) {
-                throw new Error('El nombre de la carrera no existe');
-            }
-        }),
+        .isString().withMessage('El nombre de la asignatura debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre de la asignatura no puede estar vacío'),
+    body("docenteId")
+        .isInt().withMessage('El ID del docente debe ser un entero')
+        .notEmpty().withMessage('El ID del docente no puede estar vacío'),
     controladorAsignatura.guardar
 );
 
@@ -135,15 +127,15 @@ rutas.post('/guardar',
  * @swagger
  * /asignaturas/editar:
  *   put:
- *     summary: Editar una asignatura existente
+ *     summary: Edita una asignatura existente
  *     tags: [Asignaturas]
  *     parameters:
  *       - in: query
  *         name: id
  *         required: true
- *         description: ID de la asignatura a editar
  *         schema:
  *           type: integer
+ *         description: ID de la asignatura a editar.
  *     requestBody:
  *       required: true
  *       content:
@@ -153,27 +145,30 @@ rutas.post('/guardar',
  *             properties:
  *               nombre_asignatura:
  *                 type: string
- *                 description: Nuevo nombre de la asignatura.
- *                 example: Matemáticas Avanzadas
- *               primerNombre_docente:
- *                 type: string
- *                 description: Primer nombre del docente.
- *                 example: Juan
- *               primerApellido_docente:
- *                 type: string
- *                 description: Primer apellido del docente.
- *                 example: Pérez
- *               nombre_carrera:
- *                 type: string
- *                 description: Nombre de la carrera.
- *                 example: Ingeniería en Sistemas
+ *                 description: Nombre de la asignatura.
+ *               docenteId:
+ *                 type: integer
+ *                 description: ID del docente.
  *     responses:
  *       200:
- *         description: Asignatura editada exitosamente
+ *         description: Asignatura editada correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id_asignatura:
+ *                   type: integer
+ *                 nombre_asignatura:
+ *                   type: string
+ *                 docenteId:
+ *                   type: integer
  *       400:
- *         description: Error en los datos de entrada
+ *         description: Error en la validación de datos.
  *       404:
- *         description: Asignatura no encontrada
+ *         description: Asignatura no encontrada.
+ *       500:
+ *         description: Error en el servidor al editar la asignatura.
  */
 rutas.put('/editar',
     query("id")
@@ -186,37 +181,10 @@ rutas.put('/editar',
         }),
     body("nombre_asignatura")
         .optional()
-        .isLength({ min: 3, max: 100 }).withMessage('El nombre de la asignatura debe tener entre 3 y 100 caracteres'),
-    body("primerNombre_docente")
+        .isString().withMessage('El nombre de la asignatura debe ser una cadena de texto'),
+    body("docenteId")
         .optional()
-        .custom(async value => {
-            if (value) {
-                const docenteExistente = await ModeloDocente.findOne({ where: { primerNombre: value } });
-                if (!docenteExistente) {
-                    throw new Error('El nombre del docente no existe');
-                }
-            }
-        }),
-    body("primerApellido_docente")
-        .optional()
-        .custom(async value => {
-            if (value) {
-                const docenteExistente = await ModeloDocente.findOne({ where: { primerApellido: value } });
-                if (!docenteExistente) {
-                    throw new Error('El apellido del docente no existe');
-                }
-            }
-        }),
-    body("nombre_carrera")
-        .optional()
-        .custom(async value => {
-            if (value) {
-                const carreraExistente = await ModeloCarrera.findOne({ where: { nombre_carrera: value } });
-                if (!carreraExistente) {
-                    throw new Error('El nombre de la carrera no existe');
-                }
-            }
-        }),
+        .isInt().withMessage('El ID del docente debe ser un entero'),
     controladorAsignatura.editar
 );
 
@@ -224,15 +192,15 @@ rutas.put('/editar',
  * @swagger
  * /asignaturas/eliminar:
  *   delete:
- *     summary: Eliminar una asignatura existente
+ *     summary: Elimina una asignatura
  *     tags: [Asignaturas]
  *     parameters:
  *       - in: query
  *         name: id
  *         required: true
- *         description: ID de la asignatura a eliminar
  *         schema:
  *           type: integer
+ *         description: ID de la asignatura a eliminar.
  *     responses:
  *       200:
  *         description: Asignatura eliminada exitosamente
@@ -251,26 +219,140 @@ rutas.delete('/eliminar',
     controladorAsignatura.eliminar
 );
 
-module.exports = rutas;
 /**
  * @swagger
  * /asignaturas/busqueda_id:
  *   get:
- *     summary: Buscar asignatura por ID
+ *     summary: Busca una asignatura por ID
  *     tags: [Asignaturas]
  *     parameters:
  *       - in: query
- *         name: id_asignatura
+ *         name: id
  *         required: true
- *         description: ID de la asignatura a buscar
  *         schema:
  *           type: integer
+ *         description: ID de la asignatura a buscar.
  *     responses:
  *       200:
- *         description: Asignatura encontrada
+ *         description: Asignatura encontrada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     nombre_asignatura:
+ *                       type: string
+ *                     docenteId:
+ *                       type: integer
  *       404:
- *         description: Asignatura no encontrada
+ *         description: Asignatura no encontrada.
+ *       500:
+ *         description: Error en el servidor al buscar la asignatura.
  */
-rutas.get('/busqueda_id', controladorAsignatura.busqueda_id);
+rutas.get('/busqueda_id',
+    query("id")
+        .isInt().withMessage("El id de la asignatura debe ser un entero")
+        .notEmpty().withMessage('El id no permite valores nulos'), // Se asegura que el ID no sea vacío
+    controladorAsignatura.busqueda_id
+);
+
+/**
+ * @swagger
+ * /asignaturas/busqueda_nombre:
+ *   get:
+ *     summary: Busca asignaturas por nombre
+ *     tags: [Asignaturas]
+ *     parameters:
+ *       - in: query
+ *         name: nombre_asignatura
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nombre de la asignatura a buscar.
+ *     responses:
+ *       200:
+ *         description: Asignaturas encontradas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       nombre_asignatura:
+ *                         type: string
+ *                       docenteId:
+ *                         type: integer
+ *       404:
+ *         description: No se encontraron asignaturas con ese nombre.
+ *       500:
+ *         description: Error en el servidor al buscar las asignaturas.
+ */
+rutas.get('/busqueda_nombre',
+    query("nombre_asignatura")
+        .isString().withMessage("El nombre de la asignatura debe ser una cadena de texto")
+        .notEmpty().withMessage('El nombre de la asignatura no puede estar vacío'),
+    controladorAsignatura.busqueda_nombre
+);
+
+/**
+ * @swagger
+ * /asignaturas/busqueda_docente:
+ *   get:
+ *     summary: Busca asignaturas por nombre del docente
+ *     tags: [Asignaturas]
+ *     parameters:
+ *       - in: query
+ *         name: nombre_docente
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nombre del docente a buscar.
+ *     responses:
+ *       200:
+ *         description: Asignaturas encontradas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       nombre_asignatura:
+ *                         type: string
+ *                       nombre_docente:
+ *                         type: string
+ *       404:
+ *         description: No se encontraron asignaturas para ese docente.
+ *       500:
+ *         description: Error en el servidor al buscar las asignaturas.
+ */
+rutas.get('/busqueda_docente',
+    query("nombre_docente")
+        .isString().withMessage("El nombre del docente debe ser una cadena de texto")
+        .notEmpty().withMessage('El nombre del docente no puede estar vacío'),
+    controladorAsignatura.busqueda_docente
+);
 
 module.exports = rutas;

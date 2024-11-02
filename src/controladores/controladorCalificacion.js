@@ -1,136 +1,167 @@
 const ModeloCalificacion = require('../modelos/calificacion');
 const ModeloEstudiante = require('../modelos/estudiante');
 const ModeloAsignatura = require('../modelos/asignatura');
-const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
+const { Op } = require('sequelize');
+const moment = require('moment'); // Importa la biblioteca moment
+
+// Define la función enviar
+const enviar = (status, contenido, res) => {
+    res.status(status).json(contenido);
+};
 
 exports.inicio = (req, res) => {
     res.json({ msj: "Hola desde el controlador de calificaciones" });
 };
 
+// Función para listar todas las calificaciones
 exports.listar = async (req, res) => {
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
     try {
         const data = await ModeloCalificacion.findAll({
             include: [
                 {
                     model: ModeloEstudiante,
-                    attributes: ['id', 'primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido']
+                    attributes: ['primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido']
                 },
                 {
                     model: ModeloAsignatura,
-                    attributes: ['id', 'nombre_asignatura']
+                    attributes: ['nombre_asignatura']
                 }
             ]
         });
 
-        // Transformar los datos para cambiar la estructura de la respuesta
-        const datosTransformados = data.map(calificacion => ({
-            id: calificacion.id,
-            nombre_completo: `${calificacion.Estudiante.primerNombre} ${calificacion.Estudiante.segundoNombre || ''} ${calificacion.Estudiante.primerApellido} ${calificacion.Estudiante.segundoApellido || ''}`.trim(),
-            nombre_asignatura: calificacion.Asignatura.nombre_asignatura,
-            nota: calificacion.nota
-        }));
+        const contenido = {
+            tipo: 1,
+            datos: data.map(calificacion => ({
+                id: calificacion.id,
+                nombre_estudiante: calificacion.Estudiante ? `${calificacion.Estudiante.primerNombre} ${calificacion.Estudiante.segundoNombre || ''}`.trim() : null,
+                apellido_estudiante: calificacion.Estudiante ? `${calificacion.Estudiante.primerApellido} ${calificacion.Estudiante.segundoApellido || ''}`.trim() : null,
+                nombre_asignatura: calificacion.Asignatura ? calificacion.Asignatura.nombre_asignatura : null,
+                nota: calificacion.nota,
+                createdAt: calificacion.createdAt ? moment(calificacion.createdAt).format('DD/MM/YYYY') : null,
+                updatedAt: calificacion.updatedAt ? moment(calificacion.updatedAt).format('DD/MM/YYYY') : null
+            })),
+            msj: []
+        };
 
-        contenido.tipo = 1;
-        contenido.datos = datosTransformados;
-        enviar(200, contenido, res);
+        res.json(contenido);
     } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error al cargar los datos de calificaciones";
-        enviar(500, contenido, res);
+        res.json({ tipo: 0, msj: ["Error al cargar los datos de calificaciones"] });
     }
 };
 
+// Función para guardar una nueva calificación
 exports.guardar = async (req, res) => {
-    const { nombre_estudiante, apellido_estudiante, nombre_asignatura, nota } = req.body;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    contenido.msj = errores(validationResult(req));
-    if (contenido.msj.length > 0) {
-        return enviar(200, contenido, res);
-    }
-    try {
-        // Buscar el estudiante
-        const estudiante = await ModeloEstudiante.findOne({
-            where: {
-                primerNombre: nombre_estudiante.split(' ')[0],
-                primerApellido: apellido_estudiante.split(' ')[0]
-            }
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+        var msjerror = "";
+        validacion.errors.forEach((r) => {
+            msjerror = msjerror + r.msg + ". ";
         });
-        if (!estudiante) {
-            contenido.msj = "Estudiante no encontrado";
-            return enviar(404, contenido, res);
+        res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+        try {
+            const { nombre_estudiante, apellido_estudiante, nombre_asignatura, nota } = req.body;
+
+            // Buscar el estudiante por nombre y apellido
+            const estudiante = await ModeloEstudiante.findOne({
+                where: {
+                    primerNombre: nombre_estudiante.split(' ')[0],
+                    primerApellido: apellido_estudiante.split(' ')[0]
+                }
+            });
+            if (!estudiante) return res.status(404).json({ error: 'Estudiante no encontrado' });
+
+            // Buscar la asignatura por nombre
+            const asignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura } });
+            if (!asignatura) return res.status(404).json({ error: 'Asignatura no encontrada' });
+
+            // Crear nueva calificación
+            const nuevaCalificacion = await ModeloCalificacion.create({
+                estudianteId: estudiante.id,
+                asignaturaId: asignatura.id,
+                nota
+            });
+
+            res.json({
+                tipo: 1,
+                datos: {
+                    id_calificacion: nuevaCalificacion.id,
+                    nombre_estudiante: `${estudiante.primerNombre} ${estudiante.segundoNombre || ''}`.trim(),
+                    apellido_estudiante: `${estudiante.primerApellido} ${estudiante.segundoApellido || ''}`.trim(),
+                    nombre_asignatura: asignatura.nombre_asignatura,
+                    nota: nuevaCalificacion.nota
+                },
+                msj: "Calificación guardada correctamente"
+            });
+        } catch (error) {
+            res.json({ tipo: 0, msj: "Error en el servidor al guardar la calificación" });
         }
-
-        // Buscar la asignatura
-        const asignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura } });
-        if (!asignatura) {
-            contenido.msj = "Asignatura no encontrada";
-            return enviar(404, contenido, res);
-        }
-
-        // Crear nueva calificación
-        const nuevaCalificacion = await ModeloCalificacion.create({
-            estudianteId: estudiante.id,
-            asignaturaId: asignatura.id,
-            nota: parseFloat(nota) // Asegurarse de que la nota sea un float
-        });
-
-        contenido.tipo = 1;
-        contenido.datos = nuevaCalificacion;
-        contenido.msj = "Calificación guardada correctamente";
-        enviar(200, contenido, res);
-    } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al guardar la calificación";
-        enviar(500, contenido, res);
     }
 };
 
+// Función para editar una calificación existente
 exports.editar = async (req, res) => {
-    const { id } = req.query;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
-    contenido.msj = errores(validationResult(req));
-    if (contenido.msj.length > 0) {
-        return enviar(200, contenido, res);
-    }
-    try {
-        const calificacionExistente = await ModeloCalificacion.findOne({ where: { id } });
-        if (!calificacionExistente) {
-            contenido.msj = "La calificación no existe";
-            return enviar(404, contenido, res);
-        }
+    const { id } = req.query;  // Obtiene el id de la consulta
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+        var msjerror = "";
+        validacion.errors.forEach((r) => {
+            msjerror = msjerror + r.msg + ". ";
+        });
+        res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+        try {
+            const { nombre_estudiante, apellido_estudiante, nombre_asignatura, nota } = req.body;
 
-        await ModeloCalificacion.update(req.body, { where: { id } });
-        contenido.tipo = 1;
-        contenido.msj = "Calificación editada correctamente";
-        enviar(200, contenido, res);
-    } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al editar la calificación";
-        enviar(500, contenido, res);
+            // Buscar la calificación existente por id
+            const calificacionExistente = await ModeloCalificacion.findOne({ where: { id } });
+            if (!calificacionExistente) {
+                return res.status(404).json({ msj: "La calificación no existe" });
+            }
+
+            // Buscar el estudiante por nombre y apellido
+            const estudiante = await ModeloEstudiante.findOne({
+                where: {
+                    primerNombre: nombre_estudiante.split(' ')[0],
+                    primerApellido: apellido_estudiante.split(' ')[0]
+                }
+            });
+            if (!estudiante) return res.status(404).json({ error: 'Estudiante no encontrado' });
+
+            // Buscar la asignatura por nombre
+            const asignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura } });
+            if (!asignatura) return res.status(404).json({ error: 'Asignatura no encontrada' });
+
+            // Actualizar la calificación
+            await ModeloCalificacion.update({
+                estudianteId: estudiante.id,
+                asignaturaId: asignatura.id,
+                nota
+            }, { where: { id } });
+
+            res.json({
+                tipo: 1,
+                datos: {
+                    id_calificacion: id,
+                    nombre_estudiante: `${estudiante.primerNombre} ${estudiante.segundoNombre || ''}`.trim(),
+                    apellido_estudiante: `${estudiante.primerApellido} ${estudiante.segundoApellido || ''}`.trim(),
+                    nombre_asignatura: asignatura.nombre_asignatura,
+                    nota
+                },
+                msj: "Calificación editada correctamente"
+            });
+        } catch (error) {
+            res.json({ tipo: 0, msj: "Error en el servidor al editar la calificación" });
+        }
     }
 };
 
+// Función para eliminar una calificación existente
 exports.eliminar = async (req, res) => {
     const { id } = req.query;
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
+    let contenido = { tipo: 0, datos: [], msj: [] };
+
     try {
         const calificacionExistente = await ModeloCalificacion.findOne({ where: { id } });
         if (!calificacionExistente) {
@@ -143,72 +174,97 @@ exports.eliminar = async (req, res) => {
         contenido.msj = "Calificación eliminada correctamente";
         enviar(200, contenido, res);
     } catch (error) {
+        console.error(error);
         contenido.tipo = 0;
         contenido.msj = "Error en el servidor al eliminar la calificación";
         enviar(500, contenido, res);
     }
 };
 
-// Filtros en general
-exports.busqueda = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-        var msjerror = "";
-        validacion.errors.forEach((r) => {
-            msjerror = msjerror + r.msg + ". ";
-        });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            const whereClause = {};
-            if (req.query.id) whereClause.id = req.query.id;
-            if (req.query.nombre) whereClause.nombre_carrera = req.query.nombre;
-            if (req.query.facultad) whereClause.facultad = req.query.facultad;
+/******************************** Filtros ************************************/
 
-            const busqueda = await ModeloCalificacion.findAll({
-                where: { [Op.or]: whereClause },
-            });
-            res.json(busqueda);
-        } catch (error) {
-            res.json(error);
-        }
-    }
-};
-
-// Filtro para buscar por id de Calificación
+// Función para buscar una calificación por ID
 exports.busqueda_id = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-        var msjerror = "";
-        validacion.errors.forEach((r) => {
-            msjerror = msjerror + r.msg + ". ";
+    const { id } = req.query;
+    let contenido = { tipo: 0, datos: [], msj: [] };
+
+    try {
+        const calificacion = await ModeloCalificacion.findOne({
+            where: { id },
+            include: [
+                {
+                    model: ModeloEstudiante,
+                    attributes: ['primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido']
+                },
+                {
+                    model: ModeloAsignatura,
+                    attributes: ['nombre_asignatura']
+                }
+            ]
         });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            const busqueda = await ModeloCalificacion.findOne({ where: { id: req.query.id } });
-            res.json(busqueda);
-        } catch (error) {
-            res.json(error);
+        if (!calificacion) {
+            contenido.msj = "Calificación no encontrada";
+            return enviar(404, contenido, res);
         }
+
+        contenido.tipo = 1;
+        contenido.datos = {
+            id: calificacion.id,
+            nombre_estudiante: calificacion.Estudiante ? `${calificacion.Estudiante.primerNombre} ${calificacion.Estudiante.segundoNombre || ''}`.trim() : null,
+            apellido_estudiante: calificacion.Estudiante ? `${calificacion.Estudiante.primerApellido} ${calificacion.Estudiante.segundoApellido || ''}`.trim() : null,
+            nombre_asignatura: calificacion.Asignatura ? calificacion.Asignatura.nombre_asignatura : null,
+            nota: calificacion.nota,
+            createdAt: calificacion.createdAt ? moment(calificacion.createdAt).format('DD/MM/YYYY') : null,
+            updatedAt: calificacion.updatedAt ? moment(calificacion.updatedAt).format('DD/MM/YYYY') : null
+        };
+        enviar(200, contenido, res);
+    } catch (error) {
+        contenido.tipo = 0;
+        contenido.msj = "Error en el servidor al buscar la calificación";
+        enviar(500, contenido, res);
     }
 };
 
-// Filtro para buscar por nombre de estudiante
+// Función para buscar calificaciones por nombre de asignatura
 exports.busqueda_nombre = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-        var msjerror = "";
-        validacion.errors.forEach((r) => {
-            msjerror = msjerror + r.msg + ". ";
+    const { nombre } = req.query;
+    let contenido = { tipo: 0, datos: [], msj: [] };
+
+    try {
+        const calificaciones = await ModeloCalificacion.findAll({
+            include: [
+                {
+                    model: ModeloEstudiante,
+                    attributes: ['primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido']
+                },
+                {
+                    model: ModeloAsignatura,
+                    where: { nombre_asignatura: { [Op.like]: `%${nombre}%` } },
+                    attributes: ['nombre_asignatura']
+                }
+            ]
         });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            const busqueda = await ModeloCalificacion.findOne({ where: { nombre_carrera: req.query.nombre } });
-            res.json(busqueda);
-        } catch (error) {
-            res.json(error);
+
+        if (calificaciones.length === 0) {
+            contenido.msj = "No se encontraron calificaciones para esa asignatura";
+            return enviar(404, contenido, res);
         }
+
+        contenido.tipo = 1;
+        contenido.datos = calificaciones.map(calificacion => ({
+            id: calificacion.id,
+            nombre_estudiante: calificacion.Estudiante ? `${calificacion.Estudiante.primerNombre} ${calificacion.Estudiante.segundoNombre || ''}`.trim() : null,
+            apellido_estudiante: calificacion.Estudiante ? `${calificacion.Estudiante.primerApellido} ${calificacion.Estudiante.segundoApellido || ''}`.trim() : null,
+            nombre_asignatura: calificacion.Asignatura ? calificacion.Asignatura.nombre_asignatura : null,
+            nota: calificacion.nota,
+            createdAt: calificacion.createdAt ? moment(calificacion.createdAt).format('DD/MM/YYYY') : null,
+            updatedAt: calificacion.updatedAt ? moment(calificacion.updatedAt).format('DD/MM/YYYY') : null
+        }));
+        enviar(200, contenido, res);
+    } catch (error) {
+        contenido.tipo = 0;
+        contenido.msj = "Error en el servidor al buscar las calificaciones";
+        enviar(500, contenido, res);
     }
 };
+

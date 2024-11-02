@@ -8,14 +8,14 @@ const rutas = Router();
  * @swagger
  * tags:
  *   name: Carreras
- *   description: Gestion de Carreras
+ *   description: Gestión de carreras
  */
 
 /**
  * @swagger
  * /carreras:
  *   get:
- *     summary: Muestra un mensaje de bienvenida para carreras
+ *     summary: Muestra un mensaje de bienvenida
  *     tags: [Carreras]
  *     responses:
  *       200:
@@ -54,6 +54,14 @@ rutas.get('/', controladorCarrera.inicio);
  *                       facultad:
  *                         type: string
  *                         description: Nombre de la facultad.
+ *                       createdAt:
+ *                         type: string
+ *                         format: date
+ *                         description: Fecha de creación.
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date
+ *                         description: Fecha de actualización.
  *                 msj:
  *                   type: array
  *                   items:
@@ -98,6 +106,20 @@ rutas.get('/listar', controladorCarrera.listar);
  *                     id:
  *                       type: integer
  *                       description: ID de la nueva carrera.
+ *                     nombre_carrera:
+ *                       type: string
+ *                       description: Nombre de la carrera.
+ *                     facultad:
+ *                       type: string
+ *                       description: Nombre de la facultad.
+ *                     createdAt:
+ *                       type: string
+ *                       format: date
+ *                       description: Fecha de creación.
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date
+ *                       description: Fecha de actualización.
  *                 msj:
  *                   type: string
  *       400:
@@ -107,24 +129,13 @@ rutas.get('/listar', controladorCarrera.listar);
  */
 rutas.post('/guardar',
     body("nombre_carrera")
-        .isLength({ min: 3, max: 100 }).withMessage('El nombre de la carrera debe tener entre 3 y 100 caracteres')
-        .custom(async value => {
-            if (!value) {
-                throw new Error('El nombre de la carrera no permite valores nulos');
-            } else {
-                const buscarCarrera = await ModeloCarrera.findOne({ where: { nombre_carrera: value } });
-                if (buscarCarrera) {
-                    throw new Error('El nombre de la carrera ya existe');
-                }
-            }
-        }),
+        .isString().withMessage('El nombre de la carrera debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío')
+        .isLength({ min: 3, max: 100 }).withMessage('El nombre de la carrera debe tener entre 3 y 100 caracteres'),
     body("facultad")
-        .isLength({ min: 3, max: 100 }).withMessage('La facultad debe tener entre 3 y 100 caracteres')
-        .custom(async value => {
-            if (!value) {
-                throw new Error('La facultad no permite valores nulos');
-            }
-        }),
+        .isString().withMessage('El nombre de la facultad debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre de la facultad no puede estar vacío')
+        .isLength({ min: 3, max: 100 }).withMessage('El nombre de la facultad debe tener entre 3 y 100 caracteres'),
     controladorCarrera.guardar
 );
 
@@ -221,6 +232,96 @@ rutas.delete('/eliminar',
             }
         }),
     controladorCarrera.eliminar
+);
+
+/**
+ * @swagger
+ * /carreras/busqueda_id:
+ *   get:
+ *     summary: Busca una carrera por ID
+ *     tags: [Carreras]
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la carrera a buscar.
+ *     responses:
+ *       200:
+ *         description: Carrera encontrada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 nombre_carrera:
+ *                   type: string
+ *                 facultad:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                   format: date
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date
+ *       404:
+ *         description: Carrera no encontrada.
+ *       500:
+ *         description: Error en el servidor al buscar la carrera.
+ */
+rutas.get('/busqueda_id',
+    query("id")
+        .isInt().withMessage("El id de la carrera debe ser un entero")
+        .notEmpty().withMessage('El id no permite valores nulos'), // Se asegura que el ID no sea vacío
+    controladorCarrera.busqueda_id
+);
+
+/**
+ * @swagger
+ * /carreras/busqueda_nombre:
+ *   get:
+ *     summary: Busca carreras por nombre
+ *     tags: [Carreras]
+ *     parameters:
+ *       - in: query
+ *         name: nombre
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nombre de la carrera a buscar.
+ *     responses:
+ *       200:
+ *         description: Carreras encontradas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 nombre_carrera:
+ *                   type: string
+ *                 facultad:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                   format: date
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date
+ *       404:
+ *         description: Carrera no encontrada.
+ *       500:
+ *         description: Error en el servidor al buscar la carrera.
+ */
+rutas.get('/busqueda_nombre',
+    query("nombre")
+        .isString().withMessage("El nombre de la carrera debe ser una cadena de texto")
+        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío'),
+    controladorCarrera.busqueda_nombre
 );
 
 module.exports = rutas;

@@ -5,6 +5,10 @@ const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 const argon2 = require('argon2');
 const db = require('../configuracion/db');
+const { Op } = require("sequelize");
+const moment = require('moment');
+
+
 exports.inicio = (req, res) => {
   res.json({ msj: "Hola desde el controlador de estudiantes" });
 };
@@ -48,50 +52,57 @@ exports.listar = async (req, res) => {
 
 
 exports.guardar = async (req, res) => {
+  // Validar entrada de datos
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json(errors.array());
+      return res.status(400).json(errors.array());
   }
 
   const t = await db.transaction();
   try {
-    const { primerNombre, primerApellido, email, contrasena, nombre_carrera } = req.body;
-    const nombre = `${primerNombre} ${primerApellido}`;
-    const hash = await argon2.hash(contrasena, {
-      type: argon2.argon2id,
-      memoryCost: 2 ** 16,
-      timeCost: 4,
-      parallelism: 2,
-    });
+      const { primerNombre, segundoNombre, primerApellido, segundoApellido, email, contrasena } = req.body;
 
-    // Establecer tipoUsuario como 'Estudiante'
-    const tipoUsuario = 'Estudiante';
+      // Hashear la contraseña
+      const hash = await argon2.hash(contrasena, {
+          type: argon2.argon2id,
+          memoryCost: 2 ** 16, // 64MB
+          timeCost: 4,
+          parallelism: 2,
+      });
 
-    const usuario = await ModeloUsuario.create(
-      { nombre, email, tipoUsuario, contrasena: hash },
-      { transaction: t }
-    );
+      // Crear el usuario con tipoUsuario como 'Estudiante'
+      const usuario = await ModeloUsuario.create(
+          { 
+              nombre: `${primerNombre} ${segundoNombre || ''} ${primerApellido} ${segundoApellido || ''}`.trim(), 
+              email, 
+              tipoUsuario: 'Estudiante', // Asignar tipo 'Estudiante' por defecto
+              contrasena: hash 
+          },
+          { transaction: t }
+      );
 
-    const estudiante = await ModeloEstudiante.create(
-      {
-        primerNombre,
-        primerApellido,
-        email,
-        tipoUsuario, // Puedes eliminar esta línea si no necesitas guardar el tipo en ModeloEstudiante
-        nombre_carrera,
-        usuarioId: usuario.id,
-      },
-      { transaction: t }
-    );
+      // Crear el estudiante
+      const estudiante = await ModeloEstudiante.create(
+          { 
+              primerNombre, 
+              segundoNombre, 
+              primerApellido, 
+              segundoApellido, 
+              email, 
+              usuarioId: usuario.id 
+          },
+          { transaction: t }
+      );
 
-    await t.commit();
-    res.status(201).json(estudiante);
+      await t.commit();
+      res.status(201).json(estudiante);
   } catch (error) {
-    console.error(error);
-    await t.rollback();
-    res.status(500).json({ error: 'Error al crear el estudiante' });
+      console.error(error);
+      await t.rollback();
+      res.status(500).json({ error: error.message || 'Error al crear el estudiante' });
   }
 };
+
 
 
 
@@ -191,40 +202,123 @@ exports.eliminar = async (req, res) => {
 };
 
 
-//filtro para buscar por id de Estudiante
+
+
 exports.busqueda_id = async (req, res) => {
   const validacion = validationResult(req);
   if (validacion.errors.length > 0) {
-    var msjerror = "";
-    validacion.errors.forEach((r) => {
-      msjerror = msjerror + r.msg + ". ";
+    let msjerror = validacion.errors.map((r) => r.msg).join(". ");
+    return res.status(400).json({ msj: "Hay errores en la petición", error: msjerror });
+  }
+
+  const idEstudiante = req.query.id_estudiante;
+  console.log("Buscando estudiante con ID:", idEstudiante);
+
+  if (!idEstudiante) {
+    return res.status(400).json({ msj: "ID del estudiante no proporcionado" });
+  }
+
+  try {
+    const busqueda = await ModeloEstudiante.findOne({
+      where: { id: idEstudiante },
+      include: [{
+        model: ModeloUsuario, // Asegúrate de importar el modelo de Usuarios
+        attributes: ['nombre'], // Solo traer el nombre
+      }],
+      attributes: ['primerNombre', 'primerApellido', 'createdAt'], // Traer los atributos requeridos
     });
-    res.json({ msj: "Hay errores en la petición", error: msjerror });
-  } else {
-    try {
-      const busqueda = await ModeloEstudiante.findOne({ where: { id_estudiante: req.query.id } });
-      res.json(busqueda);
-    } catch (error) {
-      res.json(error);
+
+    if (!busqueda) {
+      return res.status(404).json({ msj: "Estudiante no encontrado" });
     }
+
+    // Formatear la fecha
+    const respuesta = {
+      primerNombre: busqueda.primerNombre,
+      primerApellido: busqueda.primerApellido,
+      nombreUsuario: busqueda.Usuario.nombre, // Acceder al nombre del usuario
+      fechaCreacion: moment(busqueda.createdAt).format('YYYY-MM-DD HH:mm:ss') // Formatear la fecha
+    };
+    
+    res.json(respuesta);
+  } catch (error) {
+    console.error("Error en la búsqueda:", error);
+    res.status(500).json({ msj: "Error en la búsqueda", error: error.message });
   }
 };
 
+
+
 //filtro para buscar por nombre del estudiante
+
 exports.busqueda_nombre = async (req, res) => {
   const validacion = validationResult(req);
   if (validacion.errors.length > 0) {
-    var msjerror = "";
-    validacion.errors.forEach((r) => {
-      msjerror = msjerror + r.msg + ". ";
-    });
-    res.json({ msj: "Hay errores en la petición", error: msjerror });
-  } else {
-    try {
-      const busqueda = await ModeloEstudiante.findOne({ where: { nombre_estudiante: req.query.nombre } });
-      res.json(busqueda);
-    } catch (error) {
-      res.json(error);
-    }
+      let msjerror = validacion.errors.map((r) => r.msg).join(". ");
+      return res.status(400).json({ msj: "Hay errores en la petición", error: msjerror });
+  }
+
+  const { primerNombre, segundoNombre, primerApellido, segundoApellido } = req.query;
+  const whereClause = {
+      [Op.or]: [
+          { primerNombre: { [Op.like]: `%${primerNombre || ''}%` } },
+          { segundoNombre: { [Op.like]: `%${segundoNombre || ''}%` } },
+          { primerApellido: { [Op.like]: `%${primerApellido || ''}%` } },
+          { segundoApellido: { [Op.like]: `%${segundoApellido || ''}%` } },
+          { 
+              [Op.and]: [
+                  { primerNombre: { [Op.like]: `%${primerNombre || ''}%` } },
+                  { segundoNombre: { [Op.like]: `%${segundoNombre || ''}%` } }
+              ]
+          },
+          { 
+              [Op.and]: [
+                  { primerNombre: { [Op.like]: `%${primerNombre || ''}%` } },
+                  { segundoNombre: { [Op.like]: `%${segundoNombre || ''}%` } },
+                  { primerApellido: { [Op.like]: `%${primerApellido || ''}%` } }
+              ]
+          },
+          { 
+              [Op.and]: [
+                  { primerNombre: { [Op.like]: `%${primerNombre || ''}%` } },
+                  { segundoNombre: { [Op.like]: `%${segundoNombre || ''}%` } },
+                  { primerApellido: { [Op.like]: `%${primerApellido || ''}%` } },
+                  { segundoApellido: { [Op.like]: `%${segundoApellido || ''}%` } }
+              ]
+          }
+      ]
+  };
+
+  try {
+      // Busca el estudiante incluyendo la relación con el usuario
+      const busqueda = await ModeloEstudiante.findAll({
+          where: whereClause,
+          include: [{
+              model: ModeloUsuario, // Asegúrate de que esta relación está definida
+              attributes: ['nombre'] // Cambia 'nombre' si tienes otro campo que desees mostrar
+          }]
+      });
+
+      // Transformar la respuesta para incluir 'nombreUsuario'
+      if (busqueda.length > 0) {
+          const resultados = busqueda.map(estudiante => ({
+              id: estudiante.id,
+              primerNombre: estudiante.primerNombre,
+              segundoNombre: estudiante.segundoNombre,
+              primerApellido: estudiante.primerApellido,
+              segundoApellido: estudiante.segundoApellido,
+              email: estudiante.email,
+              fechaCreacion: estudiante.createdAt ? moment(estudiante.createdAt).format('DD/MM/YYYY') : null,
+              fechaActualizacion: estudiante.updatedAt ? moment(estudiante.updatedAt).format('DD/MM/YYYY') : null,
+              nombreUsuario: estudiante.Usuario.nombre // Asumiendo que la relación se llama 'Usuario'
+          }));
+          res.json(resultados);
+      } else {
+          res.json({ msj: "No se encontró ningún estudiante" });
+      }
+  } catch (error) {
+      console.error("Error en la búsqueda:", error);
+      res.status(500).json({ msj: "Error al realizar la búsqueda", error: error.message });
   }
 };
+

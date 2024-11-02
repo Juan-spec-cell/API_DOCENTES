@@ -2,7 +2,7 @@ const express = require('express');
 const { body, query } = require('express-validator');
 const controladorDocente = require('../controladores/controladorDocente');
 const ModeloDocente = require('../modelos/docente');
-const { Op } = require('sequelize'); // Asegúrate de importar Op para usar en las validaciones
+const { Op } = require('sequelize');
 const rutas = express.Router();
 
 /**
@@ -263,10 +263,28 @@ rutas.get('/busqueda/id', controladorDocente.busqueda_id);
  *     parameters:
  *       - in: query
  *         name: primerNombre
- *         required: true
+ *         required: false
  *         schema:
  *           type: string
  *           description: Primer nombre del docente a buscar
+ *       - in: query
+ *         name: segundoNombre
+ *         required: false
+ *         schema:
+ *           type: string
+ *           description: Segundo nombre del docente a buscar
+ *       - in: query
+ *         name: primerApellido
+ *         required: false
+ *         schema:
+ *           type: string
+ *           description: Primer apellido del docente a buscar
+ *       - in: query
+ *         name: segundoApellido
+ *         required: false
+ *         schema:
+ *           type: string
+ *           description: Segundo apellido del docente a buscar
  *     responses:
  *       200:
  *         description: Docente encontrado
