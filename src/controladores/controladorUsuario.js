@@ -16,7 +16,30 @@ exports.inicio = (req, res) => {
     res.json(rutas);
 };
 
-/*exports.guardar = async (req, res) => {
+exports.listar = async (req, res) => {
+    let contenido = {
+        tipo: 0,
+        datos: [],
+        msj: [],
+    };
+    try {
+        const data = await Usuarios.findAll();
+        contenido.tipo = 1;
+        contenido.datos = data.map(usuario => ({
+            id_usuario: usuario.id,
+            nombre: usuario.nombre,
+            email: usuario.email,
+            tipoUsuario: usuario.tipoUsuario
+        }));
+        res.status(200).json(contenido);
+    } catch (error) {
+        contenido.tipo = 0;
+        contenido.msj = "Error al cargar los datos de usuarios";
+        res.status(500).json(contenido);
+    }
+};
+
+exports.guardar = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
@@ -33,192 +56,106 @@ exports.inicio = (req, res) => {
             type: argon2.argon2id,
             memoryCost: 2 ** 16,
             timeCost: 4,
-            parallelism: 2
+            parallelism: 2,
         });
-        const nuevoUsuario = await Usuarios.create({ nombre, email, contrasena: hash, tipoUsuario });
-        res.status(201).json({ message: "Usuario guardado con éxito", data: nuevoUsuario });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Error al guardar el usuario", error: error.message });
-    }
-};*/
 
-exports.listar = async (req, res) => {
-    let contenido = { tipo: 0, datos: [], msj: [] };
-    try {
-        const data = await Usuarios.findAll();
-        contenido.tipo = 1;
-        contenido.datos = data;
-        enviar(200, contenido, res);
+        const nuevoUsuario = await Usuarios.create({
+            nombre,
+            email,
+            contrasena: hash,
+            tipoUsuario
+        });
+
+        res.status(201).json(nuevoUsuario);
     } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error al cargar los datos de usuarios";
-        enviar(500, contenido, res);
-        console.log(error);
+        res.status(500).json({ message: "Error en el servidor al guardar el usuario" });
     }
 };
 
-function enviar(status, contenido, res) {
-    res.status(status).json(contenido);
-}
-
 exports.editar = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
     const { id_usuario } = req.query;
-    const { nombre, email, contrasena, tipoUsuario } = req.body;
+    const { nombre, email, tipoUsuario } = req.body;
 
     try {
-        const usuarioExistente = await Usuarios.findOne({ where: { id_usuario } });
-        if (!usuarioExistente) return res.status(404).json({ message: "Usuario no encontrado" });
-
-        const updatedData = {
-            nombre: nombre || usuarioExistente.nombre,
-            email: email || usuarioExistente.email,
-            tipoUsuario: tipoUsuario || usuarioExistente.tipoUsuario
-        };
-
-        if (contrasena) {
-            updatedData.contrasena = await argon2.hash(contrasena, {
-                type: argon2.argon2id,
-                memoryCost: 2 ** 16,
-                timeCost: 4,
-                parallelism: 2
-            });
+        const usuarioExistente = await Usuarios.findOne({ where: { id: id_usuario } });
+        if (!usuarioExistente) {
+            return res.status(404).json({ message: "El usuario no existe" });
         }
 
-        await Usuarios.update(updatedData, { where: { id_usuario } });
+        await Usuarios.update({
+            nombre,
+            email,
+            tipoUsuario
+        }, { where: { id: id_usuario } });
 
-        res.json({ message: "Usuario actualizado con éxito" });
+        res.status(200).json({ message: "Usuario editado correctamente" });
     } catch (error) {
-        res.status(500).json({ message: "Error al actualizar el usuario", error: error.message });
+        res.status(500).json({ message: "Error en el servidor al editar el usuario" });
     }
 };
 
 exports.eliminar = async (req, res) => {
+    const { id_usuario } = req.query;
+
     try {
-        const { id } = req.query; // Recibe el id desde la consulta
-        console.log("ID recibido:", id); // Imprimir el ID recibido para depuración
-
-        // Busca el usuario por el id
-        const usuario = await Usuarios.findOne({ where: { id } });
-
-        if (!usuario) return res.status(404).json({ message: "Usuario no encontrado" });
-
-        // Eliminar según el tipo de usuario
-        if (usuario.tipoUsuario === 'Docente') {
-            await Docente.destroy({ where: { usuarioId: usuario.id } }); // Asegúrate de que el campo de relación sea correcto
-        } else if (usuario.tipoUsuario === 'Estudiante') {
-            await Estudiante.destroy({ where: { usuarioId: usuario.id } });
+        const usuarioExistente = await Usuarios.findOne({ where: { id: id_usuario } });
+        if (!usuarioExistente) {
+            return res.status(404).json({ message: "El usuario no existe" });
         }
 
-        // Eliminar el usuario
-        await usuario.destroy();
-        res.json({ message: "Usuario eliminado con éxito" });
+        await Usuarios.destroy({ where: { id: id_usuario } });
+        res.status(200).json({ message: "Usuario eliminado correctamente" });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Error al eliminar el usuario", error: error.message });
+        res.status(500).json({ message: "Error en el servidor al eliminar el usuario" });
     }
 };
 
-
-
-
-exports.buscarPorId = async (id) => {
-    return await Usuarios.findOne({ where: { id_usuario: id } });
-};
-
-function generarPin() {
-    return crypto.randomBytes(3).toString('hex');
-}
-
-exports.recuperarContrasena = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+exports.buscarPorId = async (req, res) => {
+    const { id_usuario } = req.query;
 
     try {
-        const { email } = req.body;
-        const usuario = await Usuarios.findOne({ where: { email } });
-        if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-        const pinGenerado = generarPin();
-        await usuario.update({ pin: pinGenerado });
-
-        await enviarCorreo({
-            para: email,
-            asunto: 'Recuperación de contraseña',
-            descripcion: 'Correo enviado para la recuperación de la contraseña',
-            html: `
-                <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; border-radius: 8px; width: 80%; margin: auto;">
-                    <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-                        <h1 style="color: #333;">¡Hola, ${usuario.nombre}!</h1>
-                        <p style="color: #555;">Hemos recibido una solicitud para recuperar tu contraseña. Utiliza el siguiente PIN para continuar:</p>
-                        <h2 style="background-color: #e7f3fe; color: #31708f; padding: 10px; text-align: center; border-radius: 4px;">Pin: ${pinGenerado}</h2>
-                        <p style="color: #555;">Si no solicitaste esta recuperación, puedes ignorar este correo.</p>
-                        <p style="color: #777;">Gracias,<br>El equipo de soporte</p>
-                    </div>
-                </div>`
-        });
-        res.json({ message: 'Correo enviado correctamente' });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al actualizar el usuario' });
-        console.log(error);
-    }
-};
-
-exports.actualizarContrasena = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json(errors.array());
-    }
-
-    try {
-        const { email, contrasena, pin } = req.body;
-        const usuario = await Usuarios.findOne({ where: { email: email } });
+        const usuario = await Usuarios.findOne({ where: { id: id_usuario } });
         if (!usuario) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
+            return res.status(404).json({ message: "Usuario no encontrado" });
         }
-        else if (usuario.pin != pin) {
-            return res.status(404).json({ error: 'El pin no responde' });
-        }
-        const hash = await argon2.hash(contrasena, {
-            type: argon2.argon2id,
-            memoryCost: 2 ** 16,
-            timeCost: 4,
-            parallelism: 2
+
+        res.status(200).json({
+            id_usuario: usuario.id,
+            nombre: usuario.nombre,
+            email: usuario.email,
+            tipoUsuario: usuario.tipoUsuario
         });
-        await usuario.update({ contrasena: hash });
-        res.json({ message: 'Usuario actualizado correctamente' });
     } catch (error) {
-        res.status(500).json({ error: 'Error al actualizar el usuario' });
+        res.status(500).json({ message: "Error en el servidor al buscar el usuario" });
     }
 };
 
-exports.iniciarSesion = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json(errors.array());
+exports.buscarPorNombre = async (req, res) => {
+    const { nombre } = req.query;
 
     try {
-        const { login, contrasena } = req.body;
-        const usuario = await Usuarios.findOne({
-            attributes: ['nombre', 'tipoUsuario', 'email', 'contrasena'],
+        const usuarios = await Usuarios.findAll({
             where: {
-                [Op.or]: [{ email: { [Op.like]: login } }, { nombre: { [Op.like]: login } }],
-                estado: 'Activo'
+                nombre: {
+                    [Op.like]: `%${nombre}%`
+                }
             }
         });
-        if (!usuario) return res.status(404).json({ error: 'Usuario o contraseña es incorrecto' });
 
-        if (await argon2.verify(usuario.contrasena, contrasena)) {
-            const Usuario = {
-                login: usuario.nombre,
-                tipo: usuario.tipoUsuario,
-                correo: usuario.email
-            };
-            const Token = getToken({ id: usuario.id_usuario });
-            return res.json({ Token, Usuario });
-        } else {
-            return res.status(404).json({ error: 'Usuario o contraseña incorrecta' });
+        if (usuarios.length === 0) {
+            return res.status(404).json({ message: "No se encontraron usuarios con el nombre especificado" });
         }
+
+        res.status(200).json(usuarios.map(usuario => ({
+            id_usuario: usuario.id,
+            nombre: usuario.nombre,
+            email: usuario.email,
+            tipoUsuario: usuario.tipoUsuario
+        })));
     } catch (error) {
-        res.status(500).json({ error: 'Error al iniciar sesión' });
+        res.status(500).json({ message: "Error en el servidor al buscar el usuario" });
     }
 };

@@ -2,6 +2,7 @@ const ModeloActividad = require('../modelos/actividad');
 const ModeloAsignatura = require('../modelos/asignatura'); 
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
+const moment = require('moment');
 
 exports.inicio = (req, res) => {
     const objeto = {
@@ -26,7 +27,7 @@ exports.guardar = async (req, res) => {
 
         // Asegúrate de que el campo de ID de asignatura sea el correcto
         const nuevaActividad = await ModeloActividad.create({
-            asignaturaId: asignatura.id, // Cambia `id_asignatura` a `id` si el campo de clave primaria en Asignatura es `id`
+            asignaturaId: asignatura.id, 
             tipo_actividad,
             fecha
         });
@@ -62,12 +63,12 @@ exports.listar = async (req, res) => {
 
         contenido.tipo = 1;
         contenido.datos = data.map(actividad => ({
-            id: actividad.id, // Usa 'id' en lugar de 'id_actividad' si es necesario
+            id: actividad.id,
             nombre_actividad: actividad.tipo_actividad,
             nombre_asignatura: actividad.Asignatura ? actividad.Asignatura.nombre_asignatura : null,
-            fecha: actividad.fecha,
-            createdAt: actividad.createdAt,
-            updatedAt: actividad.updatedAt
+            fecha: moment(actividad.fecha).format('DD/MM/YYYY'), // Formatea la fecha
+            createdAt: moment(actividad.createdAt).format('DD/MM/YYYY'), // Formatea la fecha de creación
+            updatedAt: moment(actividad.updatedAt).format('DD/MM/YYYY') // Formatea la fecha de actualización
         }));
         res.status(200).json(contenido);
     } catch (error) {
@@ -78,8 +79,6 @@ exports.listar = async (req, res) => {
     }
 };
 
-
-
 function enviar(status, contenido, res) {
     res.status(status).json(contenido);
 }
@@ -89,7 +88,7 @@ exports.editar = async (req, res) => {
     const { tipo_actividad, fecha } = req.body;
 
     try {
-        const buscarActividad = await ModeloActividad.findOne({ where: { id_actividad: id } });
+        const buscarActividad = await ModeloActividad.findOne({ where: { id } });
         if (!buscarActividad) {
             return res.status(404).json({ error: 'Actividad no encontrada' });
         }
@@ -129,48 +128,47 @@ exports.eliminar = async (req, res) => {
     }
 };
 
-
-
-exports.busqueda = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-        var msjerror = "";
-        validacion.errors.forEach(r => {
-            msjerror = msjerror + r.msg + ". ";
-        });
-        return res.json({ msj: "Hay errores en la petición", error: msjerror });
-    }
-
-    try {
-        const whereClause = {};
-        if (req.query.id) whereClause.id_actividad = req.query.id;
-        if (req.query.tipo) whereClause.tipo_actividad = req.query.tipo;
-        
-        const busqueda = await ModeloActividad.findAll({ where: { [Op.or]: whereClause } });
-        res.json(busqueda);
-    } catch (error) {
-        res.status(500).json(error);
-    }
-};
+/******************************** Filtros ************************************/
 
 exports.busqueda_id = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-        var msjerror = "";
-        validacion.errors.forEach(r => {
-            msjerror = msjerror + r.msg + ". ";
-        });
-        return res.json({ msj: "Hay errores en la petición", error: msjerror });
-    }
+    const { id } = req.query;
+    let contenido = { tipo: 0, datos: [], msj: [] };
 
     try {
-        const busqueda = await ModeloActividad.findOne({ where: { id_actividad: req.query.id } });
-        res.json(busqueda);
+        const actividad = await ModeloActividad.findOne({ where: { id } });
+        if (!actividad) {
+            contenido.msj = "Actividad no encontrada";
+            return enviar(404, contenido, res);
+        }
+
+        contenido.tipo = 1;
+        contenido.datos = actividad;
+        enviar(200, contenido, res);
     } catch (error) {
-        res.status(500).json(error);
+        contenido.tipo = 0;
+        contenido.msj = "Error en el servidor al buscar la actividad";
+        enviar(500, contenido, res);
     }
 };
 
-exports.buscarPorId = async (id) => {
-    return await ModeloActividad.findOne({ where: { id_actividad: id } });
+exports.busqueda_tipo = async (req, res) => {
+    const { tipo_actividad } = req.query;
+    let contenido = { tipo: 0, datos: [], msj: [] };
+
+    try {
+        const actividades = await ModeloActividad.findAll({ where: { tipo_actividad } });
+        if (actividades.length === 0) {
+            contenido.msj = "No se encontraron actividades con ese tipo";
+            return enviar(404, contenido, res);
+        }
+
+        contenido.tipo = 1;
+        contenido.datos = actividades;
+        enviar(200, contenido, res);
+    } catch (error) {
+        contenido.tipo = 0;
+        contenido.msj = "Error en el servidor al buscar las actividades";
+        enviar(500, contenido, res);
+    }
 };
+

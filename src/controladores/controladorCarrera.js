@@ -1,6 +1,8 @@
 const ModeloCarrera = require('../modelos/carrera');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
+const { Op } = require('sequelize');
+const moment = require('moment'); 
 
 exports.inicio = (req, res) => {
     res.json({ msj: "Hola desde el controlador de carreras" });
@@ -15,7 +17,13 @@ exports.listar = async (req, res) => {
     try {
         const data = await ModeloCarrera.findAll();
         contenido.tipo = 1;
-        contenido.datos = data;
+        contenido.datos = data.map(carrera => ({
+            id: carrera.id,
+            nombre_carrera: carrera.nombre_carrera,
+            facultad: carrera.facultad,
+            createdAt: carrera.createdAt ? moment(carrera.createdAt).format('DD/MM/YYYY') : null,
+            updatedAt: carrera.updatedAt ? moment(carrera.updatedAt).format('DD/MM/YYYY') : null
+        }));
         enviar(200, contenido, res);
     } catch (error) {
         contenido.tipo = 0;
@@ -38,7 +46,13 @@ exports.guardar = async (req, res) => {
     try {
         const data = await ModeloCarrera.create({ nombre_carrera, facultad });
         contenido.tipo = 1;
-        contenido.datos = data;
+        contenido.datos = {
+            id: data.id,
+            nombre_carrera: data.nombre_carrera,
+            facultad: data.facultad,
+            createdAt: data.createdAt ? moment(data.createdAt).format('DD/MM/YYYY') : null,
+            updatedAt: data.updatedAt ? moment(data.updatedAt).format('DD/MM/YYYY') : null
+        };
         contenido.msj = "Carrera guardada correctamente";
         enviar(200, contenido, res);
     } catch (error) {
@@ -102,7 +116,7 @@ exports.eliminar = async (req, res) => {
     }
 };
 
-//filtros en general
+// Filtros en general
 exports.busqueda = async (req, res) => {
     const validacion = validationResult(req);
     if (validacion.errors.length > 0) {
@@ -121,14 +135,23 @@ exports.busqueda = async (req, res) => {
             const busqueda = await ModeloCarrera.findAll({
                 where: { [Op.or]: whereClause },
             });
-            res.json(busqueda);
+
+            const contenido = busqueda.map(carrera => ({
+                id: carrera.id,
+                nombre_carrera: carrera.nombre_carrera,
+                facultad: carrera.facultad,
+                createdAt: carrera.createdAt ? moment(carrera.createdAt).format('DD/MM/YYYY') : null,
+                updatedAt: carrera.updatedAt ? moment(carrera.updatedAt).format('DD/MM/YYYY') : null
+            }));
+
+            res.json(contenido);
         } catch (error) {
             res.json(error);
         }
     }
 };
 
-//filtro para buscar por id de Carrera
+// Filtro para buscar por id de Carrera
 exports.busqueda_id = async (req, res) => {
     const validacion = validationResult(req);
     if (validacion.errors.length > 0) {
@@ -139,15 +162,27 @@ exports.busqueda_id = async (req, res) => {
         res.json({ msj: "Hay errores en la petición", error: msjerror });
     } else {
         try {
-            const busqueda = await ModeloCarrera.findOne({ where: { id: req.query.id } });
-            res.json(busqueda);
+            const carrera = await ModeloCarrera.findOne({ where: { id: req.query.id } });
+
+            if (carrera) {
+                const contenido = {
+                    id: carrera.id,
+                    nombre_carrera: carrera.nombre_carrera,
+                    facultad: carrera.facultad,
+                    createdAt: carrera.createdAt ? moment(carrera.createdAt).format('DD/MM/YYYY') : null,
+                    updatedAt: carrera.updatedAt ? moment(carrera.updatedAt).format('DD/MM/YYYY') : null
+                };
+                res.json(contenido);
+            } else {
+                res.json({ msj: "Carrera no encontrada" });
+            }
         } catch (error) {
             res.json(error);
         }
     }
 };
 
-//filtro para buscar por nombre de carrera
+// Filtro para buscar por nombre de carrera
 exports.busqueda_nombre = async (req, res) => {
     const validacion = validationResult(req);
     if (validacion.errors.length > 0) {
@@ -158,8 +193,20 @@ exports.busqueda_nombre = async (req, res) => {
         res.json({ msj: "Hay errores en la petición", error: msjerror });
     } else {
         try {
-            const busqueda = await ModeloCarrera.findOne({ where: { nombre_carrera: req.query.nombre } });
-            res.json(busqueda);
+            const carrera = await ModeloCarrera.findOne({ where: { nombre_carrera: req.query.nombre } });
+
+            if (carrera) {
+                const contenido = {
+                    id: carrera.id,
+                    nombre_carrera: carrera.nombre_carrera,
+                    facultad: carrera.facultad,
+                    createdAt: carrera.createdAt ? moment(carrera.createdAt).format('DD/MM/YYYY') : null,
+                    updatedAt: carrera.updatedAt ? moment(carrera.updatedAt).format('DD/MM/YYYY') : null
+                };
+                res.json(contenido);
+            } else {
+                res.json({ msj: "Carrera no encontrada" });
+            }
         } catch (error) {
             res.json(error);
         }

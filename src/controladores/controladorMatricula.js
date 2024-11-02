@@ -3,47 +3,49 @@ const ModeloEstudiante = require('../modelos/estudiante');
 const ModeloPeriodo = require('../modelos/periodo');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
+const { Op } = require('sequelize');
+const moment = require('moment');
 
 exports.inicio = (req, res) => {
     res.json({ msj: "Hola desde el controlador de matrículas" });
 };
 
 exports.listar = async (req, res) => {
-  let contenido = {
-      tipo: 0,
-      datos: [],
-      msj: [],
-  };
-  try {
-      const data = await ModeloMatricula.findAll({
-          include: [
-              {
-                  model: ModeloEstudiante,
-                  attributes: ['id', 'primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido']
-              },
-              {
-                  model: ModeloPeriodo,
-                  attributes: ['id', 'nombre_periodo']
-              }
-          ]
-      });
+    let contenido = {
+        tipo: 0,
+        datos: [],
+        msj: [],
+    };
+    try {
+        const data = await ModeloMatricula.findAll({
+            include: [
+                {
+                    model: ModeloEstudiante,
+                    attributes: ['primerNombre', 'primerApellido']
+                },
+                {
+                    model: ModeloPeriodo,
+                    attributes: ['nombre_periodo']
+                }
+            ]
+        });
 
-      // Transformar los datos para cambiar la estructura de la respuesta
-      const datosTransformados = data.map(matricula => ({
-          id: matricula.id,
-          nombre_completo: `${matricula.Estudiante.primerNombre} ${matricula.Estudiante.segundoNombre || ''} ${matricula.Estudiante.primerApellido} ${matricula.Estudiante.segundoApellido || ''}`.trim(),
-          nombre_periodo: matricula.Periodo.nombre_periodo
-      }));
-
-      contenido.tipo = 1;
-      contenido.datos = datosTransformados;
-      enviar(200, contenido, res);
-  } catch (error) {
-      contenido.tipo = 0;
-      contenido.msj = "Error al cargar los datos de matrículas";
-      console.error(error);
-      enviar(500, contenido, res);
-  }
+        contenido.tipo = 1;
+        contenido.datos = data.map(matricula => ({
+            id_matricula: matricula.id,
+            primerNombre: matricula.Estudiante.primerNombre,
+            primerApellido: matricula.Estudiante.primerApellido,
+            nombre_periodo: matricula.Periodo.nombre_periodo,
+            createdAt: moment(matricula.createdAt).format('YYYY-MM-DD HH:mm:ss'),
+            updatedAt: moment(matricula.updatedAt).format('YYYY-MM-DD HH:mm:ss')
+        }));
+        enviar(200, contenido, res);
+    } catch (error) {
+        contenido.tipo = 0;
+        contenido.msj = "Error al cargar los datos de matrículas";
+        enviar(500, contenido, res);
+        console.log(error);
+    }
 };
 
 exports.guardar = async (req, res) => {
@@ -172,48 +174,48 @@ exports.eliminar = async (req, res) => {
     }
 };
 
-// Filtros en general
-exports.busqueda = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-        var msjerror = "";
-        validacion.errors.forEach((r) => {
-            msjerror = msjerror + r.msg + ". ";
-        });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            const whereClause = {};
-            if (req.query.id) whereClause.id = req.query.id;
-            if (req.query.nombre) whereClause.nombre_carrera = req.query.nombre;
-            if (req.query.facultad) whereClause.facultad = req.query.facultad;
-
-            const busqueda = await ModeloMatricula.findAll({
-                where: { [Op.or]: whereClause },
-            });
-            res.json(busqueda);
-        } catch (error) {
-            res.json(error);
-        }
-    }
-};
-
 // Filtro para buscar por id de Matrícula
-exports.busqueda_id = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-        var msjerror = "";
-        validacion.errors.forEach((r) => {
-            msjerror = msjerror + r.msg + ". ";
+exports.buscarPorId = async (req, res) => {
+    let contenido = {
+        tipo: 0,
+        datos: [],
+        msj: [],
+    };
+    try {
+        const { id } = req.query;
+        const matricula = await ModeloMatricula.findOne({
+            where: { id },
+            include: [
+                {
+                    model: ModeloEstudiante,
+                    attributes: ['primerNombre', 'primerApellido']
+                },
+                {
+                    model: ModeloPeriodo,
+                    attributes: ['nombre_periodo']
+                }
+            ]
         });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            const busqueda = await ModeloMatricula.findOne({ where: { id: req.query.id } });
-            res.json(busqueda);
-        } catch (error) {
-            res.json(error);
+
+        if (!matricula) {
+            contenido.msj = "Matrícula no encontrada";
+            return enviar(404, contenido, res);
         }
+
+        contenido.tipo = 1;
+        contenido.datos = {
+            id: matricula.id,
+            nombre_estudiante: `${matricula.Estudiante.primerNombre} ${matricula.Estudiante.primerApellido}`,
+            nombre_periodo: matricula.Periodo.nombre_periodo,
+            createdAt: matricula.createdAt,
+            updatedAt: matricula.updatedAt
+        };
+        enviar(200, contenido, res);
+    } catch (error) {
+        contenido.tipo = 0;
+        contenido.msj = "Error al buscar la matrícula";
+        enviar(500, contenido, res);
+        console.log(error);
     }
 };
 
@@ -225,13 +227,51 @@ exports.busqueda_nombre = async (req, res) => {
         validacion.errors.forEach((r) => {
             msjerror = msjerror + r.msg + ". ";
         });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            const busqueda = await ModeloMatricula.findOne({ where: { nombre_carrera: req.query.nombre } });
-            res.json(busqueda);
-        } catch (error) {
-            res.json(error);
+        return res.json({ msj: "Hay errores en la petición", error: msjerror });
+    }
+
+    try {
+        const { nombre } = req.query;
+        const [primerNombre, primerApellido] = nombre.split(' ');
+
+        const whereClause = {
+            primerNombre: {
+                [Op.like]: `%${primerNombre}%`  // Permitir coincidencias parciales
+            },
+            primerApellido: {
+                [Op.like]: `%${primerApellido}%`  // Permitir coincidencias parciales
+            }
+        };
+
+        const busqueda = await ModeloMatricula.findAll({
+            include: [
+                {
+                    model: ModeloEstudiante,
+                    where: whereClause,
+                    attributes: ['primerNombre', 'segundoNombre', 'primerApellido']
+                },
+                {
+                    model: ModeloPeriodo,
+                    attributes: ['nombre_periodo']
+                }
+            ]
+        });
+
+        if (busqueda.length === 0) {
+            return res.status(404).json({ msj: "No se encontraron matrículas para el estudiante especificado" });
         }
+
+        const resultado = busqueda.map(matricula => ({
+            id_matricula: matricula.id,
+            nombre_estudiante: `${matricula.Estudiante.primerNombre} ${matricula.Estudiante.segundoNombre || ''} ${matricula.Estudiante.primerApellido}`.trim(),
+            nombre_periodo: matricula.Periodo.nombre_periodo,
+            createdAt: moment(matricula.createdAt).format('YYYY-MM-DD HH:mm:ss'),
+            updatedAt: moment(matricula.updatedAt).format('YYYY-MM-DD HH:mm:ss')
+        }));
+
+        res.json(resultado);
+    } catch (error) {
+        res.status(500).json({ error: 'Error en el servidor al buscar la matrícula' });
+        console.log(error);
     }
 };

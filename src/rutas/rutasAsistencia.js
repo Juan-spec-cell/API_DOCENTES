@@ -286,4 +286,158 @@ rutas.delete('/eliminar',
     controladorAsistencia.eliminar
 );
 
+/**
+ * @swagger
+ * /asistencias/busqueda_id:
+ *   get:
+ *     summary: Busca una asistencia por ID
+ *     tags: [Asistencias]
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la asistencia a buscar.
+ *     responses:
+ *       200:
+ *         description: Asistencia encontrada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     nombre_estudiante:
+ *                       type: string
+ *                     nombre_asignatura:
+ *                       type: string
+ *                     fecha:
+ *                       type: string
+ *                       format: date
+ *                     estado:
+ *                       type: string
+ *                       enum: [Presente, Ausente, Tardanza]
+ *       404:
+ *         description: Asistencia no encontrada.
+ *       500:
+ *         description: Error en el servidor al buscar la asistencia.
+ */
+rutas.get('/busqueda_id',
+    query("id")
+        .isInt().withMessage("El id de la asistencia debe ser un entero")
+        .notEmpty().withMessage('El id no permite valores nulos'), // Se asegura que el ID no sea vacío
+    controladorAsistencia.busqueda_id
+);
+
+/**
+ * @swagger
+ * /asistencias/busqueda_estudiante:
+ *   get:
+ *     summary: Busca asistencias por nombre del estudiante
+ *     tags: [Asistencias]
+ *     parameters:
+ *       - in: query
+ *         name: nombre_estudiante
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nombre del estudiante a buscar.
+ *     responses:
+ *       200:
+ *         description: Asistencias encontradas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       nombre_estudiante:
+ *                         type: string
+ *                       nombre_asignatura:
+ *                         type: string
+ *                       fecha:
+ *                         type: string
+ *                         format: date
+ *                       estado:
+ *                         type: string
+ *                         enum: [Presente, Ausente, Tardanza]
+ *       404:
+ *         description: No se encontraron asistencias para ese estudiante.
+ *       500:
+ *         description: Error en el servidor al buscar las asistencias.
+ */
+rutas.get('/busqueda_estudiante',
+    query("nombre_estudiante")
+        .isString().withMessage("El nombre del estudiante debe ser una cadena de texto")
+        .notEmpty().withMessage('El nombre del estudiante no puede estar vacío'),
+    controladorAsistencia.busqueda_estudiante
+);
+
+/**
+ * @swagger
+ * /asistencias/busqueda_asignatura:
+ *   get:
+ *     summary: Busca asistencias por nombre de la asignatura
+ *     tags: [Asistencias]
+ *     parameters:
+ *       - in: query
+ *         name: nombre_asignatura
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nombre de la asignatura a buscar.
+ *     responses:
+ *       200:
+ *         description: Asistencias encontradas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       nombre_estudiante:
+ *                         type: string
+ *                       nombre_asignatura:
+ *                         type: string
+ *                       fecha:
+ *                         type: string
+ *                         format: date
+ *                       estado:
+ *                         type: string
+ *                         enum: [Presente, Ausente, Tardanza]
+ *       404:
+ *         description: No se encontraron asistencias para esa asignatura.
+ *       500:
+ *         description: Error en el servidor al buscar las asistencias.
+ */
+rutas.get('/busqueda_asignatura',
+    query("nombre_asignatura")
+        .isString().withMessage("El nombre de la asignatura debe ser una cadena de texto")
+        .notEmpty().withMessage('El nombre de la asignatura no puede estar vacío'),
+    controladorAsistencia.busqueda_asignatura
+);
+
 module.exports = rutas;

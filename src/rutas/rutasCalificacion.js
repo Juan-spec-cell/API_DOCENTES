@@ -263,4 +263,94 @@ rutas.delete('/eliminar',
     controladorCalificacion.eliminar
 );
 
+/**
+ * @swagger
+ * /calificaciones/busqueda_id:
+ *   get:
+ *     summary: Busca una calificación por ID
+ *     tags: [Calificaciones]
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la calificación a buscar.
+ *     responses:
+ *       200:
+ *         description: Calificación encontrada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 nombre_carrera:
+ *                   type: string
+ *                 facultad:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                   format: date
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date
+ *       404:
+ *         description: Calificación no encontrada.
+ *       500:
+ *         description: Error en el servidor al buscar la calificación.
+ */
+rutas.get('/busqueda_id',
+    query("id")
+        .isInt().withMessage("El id de la calificación debe ser un entero")
+        .notEmpty().withMessage('El id no permite valores nulos'), // Se asegura que el ID no sea vacío
+    controladorCalificacion.busqueda_id
+);
+
+/**
+ * @swagger
+ * /calificaciones/busqueda_nombre:
+ *   get:
+ *     summary: Busca calificaciones por nombre de carrera
+ *     tags: [Calificaciones]
+ *     parameters:
+ *       - in: query
+ *         name: nombre
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nombre de la asignatura a buscar.
+ *     responses:
+ *       200:
+ *         description: Calificaciones encontradas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 nombre_carrera:
+ *                   type: string
+ *                 facultad:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                   format: date
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date
+ *       404:
+ *         description: Calificación no encontrada.
+ *       500:
+ *         description: Error en el servidor al buscar la calificación.
+ */
+rutas.get('/busqueda_nombre',
+    query("nombre")
+        .isString().withMessage("El nombre de la carrera debe ser una cadena de texto")
+        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío'),
+    controladorCalificacion.busqueda_nombre
+);
+
 module.exports = rutas;

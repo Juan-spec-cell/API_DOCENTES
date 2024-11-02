@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const { body, query } = require('express-validator');
-const controladorActividad = require('../controladores/controladorActividad'); 
+const controladorActividad = require('../controladores/controladorActividad');
+const ModeloActividad = require('../modelos/actividad'); // Asegúrate de importar ModeloActividad
 const rutas = Router();
 
 /**
@@ -9,6 +10,18 @@ const rutas = Router();
  *   name: Actividades
  *   description: Gestión de actividades
  */
+
+/**
+ * @swagger
+ * /actividades:
+ *   get:
+ *     summary: Muestra un mensaje de bienvenida
+ *     tags: [Actividades]
+ *     responses:
+ *       200:
+ *         description: Mensaje de bienvenida de la API.
+ */
+rutas.get('/', controladorActividad.inicio);
 
 /**
  * @swagger
@@ -41,10 +54,6 @@ const rutas = Router();
  *                       nombre_asignatura:
  *                         type: string
  *                         description: Nombre de la asignatura.
- *                       tipo_actividad:
- *                         type: string
- *                         enum: [Acumulativo, Examen]
- *                         description: Tipo de actividad.
  *                       fecha:
  *                         type: string
  *                         format: date
@@ -52,11 +61,11 @@ const rutas = Router();
  *                       createdAt:
  *                         type: string
  *                         format: date-time
- *                         description: Fecha de creación de la actividad.
+ *                         description: Fecha de creación.
  *                       updatedAt:
  *                         type: string
  *                         format: date-time
- *                         description: Fecha de última actualización de la actividad.
+ *                         description: Fecha de actualización.
  *                 msj:
  *                   type: array
  *                   items:
@@ -81,29 +90,55 @@ rutas.get('/listar', controladorActividad.listar);
  *             properties:
  *               nombre_asignatura:
  *                 type: string
- *                 description: Nombre de la asignatura
+ *                 description: Nombre de la asignatura.
  *               tipo_actividad:
  *                 type: string
- *                 enum: [Acumulativo, Examen]
- *                 description: Tipo de actividad
+ *                 description: Tipo de actividad.
  *               fecha:
  *                 type: string
  *                 format: date
- *                 description: Fecha de la actividad
+ *                 description: Fecha de la actividad.
  *     responses:
  *       201:
- *         description: Actividad guardada
+ *         description: Actividad guardada con éxito.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: ID de la actividad.
+ *                     nombre_asignatura:
+ *                       type: string
+ *                       description: Nombre de la asignatura.
+ *                     tipo_actividad:
+ *                       type: string
+ *                       description: Tipo de actividad.
+ *                     fecha:
+ *                       type: string
+ *                       format: date
+ *                       description: Fecha de la actividad.
  *       400:
- *         description: Error en los datos proporcionados
- *       404:
- *         description: Asignatura no encontrada
+ *         description: Error en la validación de datos.
  *       500:
- *         description: Error al guardar la actividad
+ *         description: Error en el servidor al guardar la actividad.
  */
 rutas.post('/guardar',
-    body("nombre_asignatura").notEmpty().withMessage('Ingrese un valor en el nombre de la asignatura'),
-    body("tipo_actividad").notEmpty().withMessage('Ingrese un valor en el tipo de actividad'),
-    body("fecha").notEmpty().withMessage('Ingrese una fecha para la actividad'),
+    body("nombre_asignatura")
+        .isString().withMessage('El nombre de la asignatura debe ser una cadena de texto')
+        .notEmpty().withMessage('El nombre de la asignatura no puede estar vacío'),
+    body("tipo_actividad")
+        .isString().withMessage('El tipo de actividad debe ser una cadena de texto')
+        .notEmpty().withMessage('El tipo de actividad no puede estar vacío'),
+    body("fecha")
+        .isDate().withMessage('La fecha debe ser una fecha válida')
+        .notEmpty().withMessage('La fecha no puede estar vacía'),
     controladorActividad.guardar
 );
 
@@ -119,9 +154,9 @@ rutas.post('/guardar',
  *         required: true
  *         schema:
  *           type: integer
- *           description: ID de la actividad a editar
+ *         description: ID de la actividad a editar.
  *     requestBody:
- *       required: false
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
@@ -129,37 +164,48 @@ rutas.post('/guardar',
  *             properties:
  *               tipo_actividad:
  *                 type: string
- *                 enum: [Acumulativo, Examen]
- *                 description: Tipo de actividad (opcional)
+ *                 description: Tipo de actividad.
  *               fecha:
  *                 type: string
  *                 format: date
- *                 description: Fecha de la actividad (opcional)
+ *                 description: Fecha de la actividad.
  *     responses:
  *       200:
- *         description: Actividad editada
- *       404:
- *         description: Actividad no encontrada
+ *         description: Actividad editada correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     tipo_actividad:
+ *                       type: string
+ *                     fecha:
+ *                       type: string
+ *                       format: date
  *       400:
- *         description: Error en los datos proporcionados
+ *         description: Error en la validación de datos.
+ *       404:
+ *         description: Actividad no encontrada.
  *       500:
- *         description: Error al editar la actividad
+ *         description: Error en el servidor al editar la actividad.
  */
 rutas.put('/editar',
     query("id")
         .isInt().withMessage("El id de la actividad debe ser un entero")
-        .custom(async value => {
-            if (!value) {
-                throw new Error('El id no permite valores nulos');
-            } else {
-                const buscarActividad = await controladorActividad.buscarPorId(value);
-                if (!buscarActividad) {
-                    throw new Error('El id de la actividad no existe');
-                }
-            }
-        }),
-    body("tipo_actividad").optional().isString().withMessage('El tipo de actividad debe ser una cadena de texto'),
-    body("fecha").optional().isString().withMessage('La fecha debe ser una cadena de texto'),
+        .notEmpty().withMessage('El id no permite valores nulos'), // Se asegura que el ID no sea vacío
+    body("tipo_actividad")
+        .optional()
+        .isString().withMessage('El tipo de actividad debe ser una cadena de texto'),
+    body("fecha")
+        .optional()
+        .isDate().withMessage('La fecha debe ser una fecha válida'),
     controladorActividad.editar
 );
 
@@ -196,5 +242,99 @@ rutas.delete('/eliminar',
         }),
     controladorActividad.eliminar
 );
+
+/**
+ * @swagger
+ * /actividades/busqueda_id:
+ *   get:
+ *     summary: Busca una actividad por ID
+ *     tags: [Actividades]
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la actividad a buscar.
+ *     responses:
+ *       200:
+ *         description: Actividad encontrada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     tipo_actividad:
+ *                       type: string
+ *                     fecha:
+ *                       type: string
+ *                       format: date
+ *       404:
+ *         description: Actividad no encontrada.
+ *       500:
+ *         description: Error en el servidor al buscar la actividad.
+ */
+rutas.get('/busqueda_id',
+    query("id")
+        .isInt().withMessage("El id de la actividad debe ser un entero")
+        .notEmpty().withMessage('El id no permite valores nulos'), // Se asegura que el ID no sea vacío
+    controladorActividad.busqueda_id
+);
+
+/**
+ * @swagger
+ * /actividades/busqueda_tipo:
+ *   get:
+ *     summary: Busca actividades por tipo
+ *     tags: [Actividades]
+ *     parameters:
+ *       - in: query
+ *         name: tipo_actividad
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Tipo de actividad a buscar.
+ *     responses:
+ *       200:
+ *         description: Actividades encontradas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       tipo_actividad:
+ *                         type: string
+ *                       fecha:
+ *                         type: string
+ *                         format: date
+ *       404:
+ *         description: No se encontraron actividades con ese tipo.
+ *       500:
+ *         description: Error en el servidor al buscar las actividades.
+ */
+rutas.get('/busqueda_tipo',
+    query("tipo_actividad")
+        .isString().withMessage("El tipo de actividad debe ser una cadena de texto")
+        .notEmpty().withMessage('El tipo de actividad no puede estar vacío'),
+    controladorActividad.busqueda_tipo
+);
+
+
 
 module.exports = rutas;

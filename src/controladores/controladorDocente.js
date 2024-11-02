@@ -4,6 +4,10 @@ const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 const argon2 = require('argon2');
 const db = require('../configuracion/db');
+const { Op } = require('sequelize');
+const moment = require('moment');
+
+
 exports.inicio = (req, res) => {
     res.json({ msj: "Hola desde el controlador de docentes" });
 };
@@ -174,40 +178,121 @@ exports.eliminar = async (req, res) => {
 };
 
 
-// Filtro para buscar por id de Docente
+
 exports.busqueda_id = async (req, res) => {
     const validacion = validationResult(req);
     if (validacion.errors.length > 0) {
-        var msjerror = "";
+      let msjerror = validacion.errors.map((r) => r.msg).join(". ");
+      return res.status(400).json({ msj: "Hay errores en la petición", error: msjerror });
+    }
+  
+    const idDocente = req.query.id; // Cambia 'id' si tienes un nombre diferente
+    console.log("Buscando docente con ID:", idDocente);
+  
+    if (!idDocente) {
+      return res.status(400).json({ msj: "ID del docente no proporcionado" });
+    }
+  
+    try {
+      const busqueda = await ModeloDocente.findOne({
+        where: { id: idDocente },
+        include: [{
+          model: ModeloUsuario, // Asegúrate de importar el modelo de Usuarios
+          attributes: ['nombre'], // Solo traer el nombre
+        }],
+        attributes: ['primerNombre', 'primerApellido', 'createdAt'], // Traer los atributos requeridos
+      });
+  
+      if (!busqueda) {
+        return res.status(404).json({ msj: "Docente no encontrado" });
+      }
+  
+      // Formatear la fecha
+      const respuesta = {
+        primerNombre: busqueda.primerNombre,
+        primerApellido: busqueda.primerApellido,
+        nombreUsuario: busqueda.Usuario.nombre, // Acceder al nombre del usuario
+        fechaCreacion: moment(busqueda.createdAt).format('YYYY-MM-DD HH:mm:ss') // Formatear la fecha
+      };
+      
+      res.json(respuesta);
+    } catch (error) {
+      console.error("Error en la búsqueda:", error);
+      res.status(500).json({ msj: "Error en la búsqueda", error: error.message });
+    }
+  };
+
+
+
+
+exports.busqueda_nombre = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+        let msjerror = "";
         validacion.errors.forEach((r) => {
-            msjerror = msjerror + r.msg + ". ";
+            msjerror += r.msg + ". ";
         });
         res.json({ msj: "Hay errores en la petición", error: msjerror });
     } else {
         try {
-            const busqueda = await ModeloDocente.findOne({ where: { id: req.query.id } });
-            res.json(busqueda);
+            const { primerNombre, segundoNombre, primerApellido, segundoApellido } = req.query;
+            const whereClause = {
+                [Op.or]: [
+                    { primerNombre: { [Op.like]: `%${primerNombre}%` } },
+                    { segundoNombre: { [Op.like]: `%${segundoNombre}%` } },
+                    { primerApellido: { [Op.like]: `%${primerApellido}%` } },
+                    { segundoApellido: { [Op.like]: `%${segundoApellido}%` } },
+                    { 
+                        [Op.and]: [
+                            { primerNombre: { [Op.like]: `%${primerNombre}%` } },
+                            { segundoNombre: { [Op.like]: `%${segundoNombre}%` } }
+                        ]
+                    },
+                    { 
+                        [Op.and]: [
+                            { primerNombre: { [Op.like]: `%${primerNombre}%` } },
+                            { segundoNombre: { [Op.like]: `%${segundoNombre}%` } },
+                            { primerApellido: { [Op.like]: `%${primerApellido}%` } }
+                        ]
+                    },
+                    { 
+                        [Op.and]: [
+                            { primerNombre: { [Op.like]: `%${primerNombre}%` } },
+                            { segundoNombre: { [Op.like]: `%${segundoNombre}%` } },
+                            { primerApellido: { [Op.like]: `%${primerApellido}%` } },
+                            { segundoApellido: { [Op.like]: `%${segundoApellido}%` } }
+                        ]
+                    }
+                ]
+            };
+            
+            // Busca el docente incluyendo la relación con el usuario
+            const busqueda = await ModeloDocente.findOne({
+                where: whereClause,
+                include: [{
+                    model: ModeloUsuario, // Asegúrate de que esta relación está definida
+                    attributes: ['nombre'] // Cambia 'nombre' si tienes otro campo que desees mostrar
+                }]
+            });
+
+            // Transformar la respuesta para incluir 'nombreUsuario'
+            if (busqueda) {
+                const resultado = {
+                    id: busqueda.id,
+                    primerNombre: busqueda.primerNombre,
+                    segundoNombre: busqueda.segundoNombre,
+                    primerApellido: busqueda.primerApellido,
+                    segundoApellido: busqueda.segundoApellido,
+                    email: busqueda.email,
+                    nombreUsuario: busqueda.Usuario.nombre // Asumiendo que la relación se llama 'Usuario'
+                };
+                res.json(resultado);
+            } else {
+                res.json({ msj: "No se encontró el docente" });
+            }
         } catch (error) {
             res.json(error);
         }
     }
 };
 
-// Filtro para buscar por nombre del docente
-exports.busqueda_nombre = async (req, res) => {
-    const validacion = validationResult(req);
-    if (validacion.errors.length > 0) {
-        var msjerror = "";
-        validacion.errors.forEach((r) => {
-            msjerror = msjerror + r.msg + ". ";
-        });
-        res.json({ msj: "Hay errores en la petición", error: msjerror });
-    } else {
-        try {
-            const busqueda = await ModeloDocente.findOne({ where: { nombre: req.query.primerNombre } });
-            res.json(busqueda);
-        } catch (error) {
-            res.json(error);
-        }
-    }
-};
