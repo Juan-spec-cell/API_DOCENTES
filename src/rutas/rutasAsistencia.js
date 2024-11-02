@@ -1,9 +1,8 @@
 const { Router } = require('express');
 const { body, query } = require('express-validator');
 const controladorAsistencia = require('../controladores/controladorAsistencia');
-const ModeloAsistencia = require('../modelos/asistencia'); 
+const ModeloAsistencia = require('../modelos/asistencia'); // Asegúrate de importar ModeloAsistencia
 const rutas = Router();
-
 
 /**
  * @swagger
@@ -11,6 +10,7 @@ const rutas = Router();
  *   name: Asistencias
  *   description: Gestion de Asistencias
  */
+
 /**
  * @swagger
  * /asistencias:
@@ -111,6 +111,9 @@ rutas.get('/listar', controladorAsistencia.listar);
  *                 datos:
  *                   type: object
  *                   properties:
+ *                     id_asistencia:
+ *                       type: integer
+ *                       description: ID de la asistencia.
  *                     nombre_estudiante:
  *                       type: string
  *                       description: Nombre del estudiante.
@@ -157,7 +160,7 @@ rutas.post('/guardar',
  *     tags: [Asistencias]
  *     parameters:
  *       - in: query
- *         name: id_asistencia
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -198,7 +201,7 @@ rutas.post('/guardar',
  *                 datos:
  *                   type: object
  *                   properties:
- *                     id_asistencia:
+ *                     id:
  *                       type: integer
  *                       description: ID de la Asistencia.
  *                     nombre_estudiante:
@@ -225,10 +228,10 @@ rutas.post('/guardar',
  *         description: Error en el servidor al editar la asistencia.
  */
 rutas.put('/editar',
-    query("id_asistencia")
+    query("id")
         .isInt().withMessage("El id de la asistencia debe ser un entero")
         .custom(async value => {
-            const buscarAsistencia = await ModeloAsistencia.findOne({ where: { id_asistencia: value } });
+            const buscarAsistencia = await ModeloAsistencia.findOne({ where: { id: value } });
             if (!buscarAsistencia) {
                 throw new Error('El id de la asistencia no existe');
             }
@@ -258,7 +261,7 @@ rutas.put('/editar',
  *     tags: [Asistencias]
  *     parameters:
  *       - in: query
- *         name: id_asistencia
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -272,10 +275,10 @@ rutas.put('/editar',
  *         description: Error en el servidor al eliminar la asistencia.
  */
 rutas.delete('/eliminar',
-    query("id_asistencia")
+    query("id")
         .isInt().withMessage("El id de la asistencia debe ser un entero")
         .custom(async value => {
-            const buscarAsistencia = await ModeloAsistencia.findOne({ where: { id_asistencia: value } });
+            const buscarAsistencia = await ModeloAsistencia.findOne({ where: { id: value } });
             if (!buscarAsistencia) {
                 throw new Error('El id de la asistencia no existe');
             }

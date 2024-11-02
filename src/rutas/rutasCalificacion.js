@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const { body, query } = require('express-validator');
-const controladorCalificacion = require('../controladores/controladorCalificacion'); // Asegúrate de que este controlador existe
+const controladorCalificacion = require('../controladores/controladorCalificacion');
+const ModeloCalificacion = require('../modelos/calificacion');
 const rutas = Router();
 
 /**
@@ -10,6 +11,17 @@ const rutas = Router();
  *   description: Gestión de calificaciones
  */
 
+/**
+ * @swagger
+ * /calificaciones:
+ *   get:
+ *     summary: Muestra un mensaje de bienvenida
+ *     tags: [Calificaciones]
+ *     responses:
+ *       200:
+ *         description: Mensaje de bienvenida de la API.
+ */
+rutas.get('/', controladorCalificacion.inicio);
 
 /**
  * @swagger
@@ -33,21 +45,18 @@ const rutas = Router();
  *                   items:
  *                     type: object
  *                     properties:
- *                       id_calificacion:
+ *                       id:
  *                         type: integer
  *                         description: ID de la calificación.
- *                       nombre_estudiante:
+ *                       nombre_completo:
  *                         type: string
- *                         description: Nombre del estudiante.
- *                       apellido_estudiante:
- *                         type: string
- *                         description: Apellido del estudiante.
+ *                         description: Nombre completo del estudiante.
  *                       nombre_asignatura:
  *                         type: string
  *                         description: Nombre de la asignatura.
  *                       nota:
- *                         type: float
- *                         description: Nota de la calificación.
+ *                         type: number
+ *                         description: Nota del estudiante.
  *                 msj:
  *                   type: array
  *                   items:
@@ -72,49 +81,47 @@ rutas.get('/listar', controladorCalificacion.listar);
  *             properties:
  *               nombre_estudiante:
  *                 type: string
- *                 description: Nombre del estudiante
+ *                 description: Nombre del estudiante.
  *               apellido_estudiante:
  *                 type: string
- *                 description: Apellido del estudiante
+ *                 description: Apellido del estudiante.
  *               nombre_asignatura:
  *                 type: string
- *                 description: Nombre de la asignatura
+ *                 description: Nombre de la asignatura.
  *               nota:
  *                 type: number
- *                 format: float
- *                 description: Nota de la calificación
+ *                 description: Nota del estudiante.
  *     responses:
  *       200:
- *         description: Calificación guardada
+ *         description: Calificación guardada correctamente.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 message:
- *                   type: string
- *                 data:
+ *                 tipo:
+ *                   type: integer
+ *                 datos:
  *                   type: object
  *                   properties:
  *                     id_calificacion:
  *                       type: integer
- *                       description: ID de la calificación.
+ *                       description: ID de la nueva calificación.
  *                     nombre_estudiante:
  *                       type: string
  *                       description: Nombre del estudiante.
- *                     apellido_estudiante:
- *                       type: string
- *                       description: Apellido del estudiante.
  *                     nombre_asignatura:
  *                       type: string
  *                       description: Nombre de la asignatura.
  *                     nota:
- *                       type: float
- *                       description: Nota de la calificación.
+ *                       type: number
+ *                       description: Nota del estudiante.
+ *                 msj:
+ *                   type: string
  *       400:
- *         description: Error en los datos proporcionados
+ *         description: Error en la validación de datos.
  *       500:
- *         description: Error en el servidor al guardar la calificación
+ *         description: Error en el servidor al guardar la calificación.
  */
 rutas.post('/guardar',
     body("nombre_estudiante")
@@ -127,10 +134,17 @@ rutas.post('/guardar',
         .isString().withMessage('El nombre de la asignatura debe ser una cadena de texto')
         .notEmpty().withMessage('El nombre de la asignatura no puede estar vacío'),
     body("nota")
-        .isFloat().withMessage('La nota debe ser un número flotante')
-        .notEmpty().withMessage('Ingrese una nota para la calificación'),
+        .custom(value => {
+            if (isNaN(value)) {
+                throw new Error('La nota debe ser un número');
+            }
+            return true;
+        })
+        .notEmpty().withMessage('Ingrese una nota para el estudiante')
+        .toFloat(), // Convertir a float
     controladorCalificacion.guardar
 );
+
 /**
  * @swagger
  * /calificaciones/editar:
@@ -143,7 +157,7 @@ rutas.post('/guardar',
  *         required: true
  *         schema:
  *           type: integer
- *           description: ID de la calificación a editar
+ *         description: ID de la calificación a editar.
  *     requestBody:
  *       required: true
  *       content:
@@ -153,19 +167,19 @@ rutas.post('/guardar',
  *             properties:
  *               nombre_estudiante:
  *                 type: string
- *                 description: Nombre del estudiante (requerido)
+ *                 description: Nombre del estudiante.
  *               apellido_estudiante:
  *                 type: string
- *                 description: Apellido del estudiante (requerido)
+ *                 description: Apellido del estudiante.
  *               nombre_asignatura:
  *                 type: string
- *                 description: Nombre de la asignatura (requerido)
+ *                 description: Nombre de la asignatura.
  *               nota:
- *                 type: float
- *                 description: Nota de la calificación (requerido)
+ *                 type: number
+ *                 description: Nota del estudiante.
  *     responses:
  *       200:
- *         description: Calificación editada correctamente
+ *         description: Calificación editada correctamente.
  *         content:
  *           application/json:
  *             schema:
@@ -178,46 +192,21 @@ rutas.post('/guardar',
  *                 nombre_asignatura:
  *                   type: string
  *                 nota:
- *                   type: Float
+ *                   type: number
  *       400:
- *         description: Error en los datos proporcionados
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
+ *         description: Error en la validación de datos.
  *       404:
- *         description: Calificación, estudiante o asignatura no encontrados
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
+ *         description: Calificación, estudiante o asignatura no encontrados.
  *       500:
- *         description: Error en el servidor
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
+ *         description: Error en el servidor.
  */
 rutas.put('/editar',
     query("id")
         .isInt().withMessage("El id de la calificación debe ser un entero")
         .custom(async value => {
-            if (!value) {
-                throw new Error('El id no permite valores nulos');
-            } else {
-                const buscarCalificacion = await controladorCalificacion.buscarPorId(value);
-                if (!buscarCalificacion) {
-                    throw new Error('El id de la calificación no existe');
-                }
+            const buscarCalificacion = await ModeloCalificacion.findOne({ where: { id: value } });
+            if (!buscarCalificacion) {
+                throw new Error('El id de la calificación no existe');
             }
         }),
     body("nombre_estudiante")
@@ -230,11 +219,16 @@ rutas.put('/editar',
         .notEmpty().withMessage('El nombre de la asignatura es obligatorio')
         .isString().withMessage('El nombre de la asignatura debe ser un texto'),
     body("nota")
+        .custom(value => {
+            if (isNaN(value)) {
+                throw new Error('La nota debe ser un número');
+            }
+            return true;
+        })
         .notEmpty().withMessage('La nota es obligatoria')
-        .isFloat().withMessage('La nota debe ser un número decimal'),
+        .toFloat(), // Convertir a float
     controladorCalificacion.editar
 );
-
 
 /**
  * @swagger
@@ -248,24 +242,22 @@ rutas.put('/editar',
  *         required: true
  *         schema:
  *           type: integer
- *           description: ID de la calificación a eliminar
+ *         description: ID de la calificación a eliminar.
  *     responses:
  *       200:
- *         description: Calificación eliminada
- *       400:
- *         description: Error en los datos proporcionados
+ *         description: Calificación eliminada correctamente.
+ *       404:
+ *         description: El ID de la calificación no existe.
+ *       500:
+ *         description: Error en el servidor al eliminar la calificación.
  */
 rutas.delete('/eliminar',
     query("id")
         .isInt().withMessage("El id de la calificación debe ser un entero")
         .custom(async value => {
-            if (!value) {
-                throw new Error('El id no permite valores nulos');
-            } else {
-                const buscarCalificacion = await controladorCalificacion.buscarPorId(value);
-                if (!buscarCalificacion) {
-                    throw new Error('El id de la calificación no existe');
-                }
+            const buscarCalificacion = await ModeloCalificacion.findOne({ where: { id: value } });
+            if (!buscarCalificacion) {
+                throw new Error('El id de la calificación no existe');
             }
         }),
     controladorCalificacion.eliminar

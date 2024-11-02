@@ -1,9 +1,11 @@
 const ModeloDocente = require('../modelos/docente');
 const ModeloCarrera = require('../modelos/carrera');
 const ModeloAsignatura = require('../modelos/asignatura');
+const { enviar, errores } = require('../configuracion/ayuda');
+const { validationResult } = require('express-validator');
 
 exports.inicio = (req, res) => {
-    res.json({ msj: "Pagina de inicio de Asignaturas" });
+    res.json({ msj: "Página de inicio de Asignaturas" });
 };
 
 exports.listar = async (req, res) => {
@@ -13,7 +15,7 @@ exports.listar = async (req, res) => {
             include: [
                 {
                     model: ModeloDocente,
-                    attributes: ['nombre', 'apellido']
+                    attributes: ['primerNombre', 'primerApellido']
                 },
                 {
                     model: ModeloCarrera,
@@ -24,9 +26,10 @@ exports.listar = async (req, res) => {
 
         contenido.tipo = 1;
         contenido.datos = data.map(asignatura => ({
+            id: asignatura.id,
             id_asignatura: asignatura.id_asignatura,
             nombre_asignatura: asignatura.nombre_asignatura,
-            nombre_docente: `${asignatura.Docente.nombre} ${asignatura.Docente.apellido}`,
+            nombre_docente: `${asignatura.Docente.primerNombre} ${asignatura.Docente.primerApellido}`,
             nombre_carrera: asignatura.Carrera.nombre_carrera,
             createdAt: asignatura.createdAt,
             updatedAt: asignatura.updatedAt
@@ -40,116 +43,223 @@ exports.listar = async (req, res) => {
     }
 };
 
-
 exports.guardar = async (req, res) => {
-    const { nombre_asignatura, nombre_docente, apellido_docente, nombre_carrera } = req.body;
+    const { nombre_asignatura, primerNombre_docente, primerApellido_docente, nombre_carrera } = req.body;
+    let contenido = { tipo: 0, datos: [], msj: [] };
+    contenido.msj = errores(validationResult(req));
+    if (contenido.msj.length > 0) {
+        return enviar(200, contenido, res);
+    }
 
     try {
-        // Verificar que los campos requeridos no estén vacíos
-        if (!nombre_asignatura || !nombre_docente || !apellido_docente || !nombre_carrera) {
+        if (!nombre_asignatura || !primerNombre_docente || !primerApellido_docente || !nombre_carrera) {
             return res.status(400).json({ error: 'Todos los campos son obligatorios' });
         }
 
-        // Buscar el docente por nombre y apellido
-        const docente = await ModeloDocente.findOne({ where: { nombre: nombre_docente, apellido: apellido_docente } });
+        const docente = await ModeloDocente.findOne({ where: { primerNombre: primerNombre_docente, primerApellido: primerApellido_docente } });
         if (!docente) {
-            return res.status(404).json({ error: 'Docente no encontrado' });
+            contenido.msj = 'Docente no encontrado';
+            return enviar(404, contenido, res);
         }
 
-        // Buscar la carrera por nombre
         const carrera = await ModeloCarrera.findOne({ where: { nombre_carrera } });
         if (!carrera) {
-            return res.status(404).json({ error: 'Carrera no encontrada' });
+            contenido.msj = 'Carrera no encontrada';
+            return enviar(404, contenido, res);
         }
 
-        // Crear nueva asignatura
         const nuevaAsignatura = await ModeloAsignatura.create({
             nombre_asignatura,
-            id_docente: docente.id_docente,
-            id_carrera: carrera.id_carrera
+            docenteId: docente.id,
+            carreraId: carrera.id
         });
 
-        // Preparar la respuesta
-        const response = {
+        contenido.tipo = 1;
+        contenido.datos = {
             nombre_asignatura: nuevaAsignatura.nombre_asignatura,
-            nombre_docente: `${docente.nombre} ${docente.apellido}`,
+            nombre_docente: `${docente.primerNombre} ${docente.primerApellido}`,
             nombre_carrera: carrera.nombre_carrera
         };
-
-        return res.status(201).json(response);
+        contenido.msj = "Asignatura guardada correctamente";
+        enviar(201, contenido, res);
     } catch (error) {
-        console.log(error);
-        return res.status(400).json({ error: error.message });
+        contenido.tipo = 0;
+        contenido.msj = "Error en el servidor al guardar la asignatura";
+        enviar(500, contenido, res);
     }
 };
 
 exports.editar = async (req, res) => {
-    const { id_asignatura } = req.query;
-    const { nombre_asignatura, nombre_docente, apellido_docente, nombre_carrera } = req.body;
+    const { id } = req.query;
+    const { nombre_asignatura, primerNombre_docente, primerApellido_docente, nombre_carrera } = req.body;
+    let contenido = { tipo: 0, datos: [], msj: [] };
+    contenido.msj = errores(validationResult(req));
+    if (contenido.msj.length > 0) {
+        return enviar(200, contenido, res);
+    }
 
     try {
-        const asignatura = await ModeloAsignatura.findOne({ where: { id_asignatura } });
+        const asignatura = await ModeloAsignatura.findOne({ where: { id } });
         if (!asignatura) {
-            return res.status(404).json({ error: 'Asignatura no encontrada' });
+            contenido.msj = "Asignatura no encontrada";
+            return enviar(404, contenido, res);
         }
 
-        // Buscar el docente por nombre y apellido si se proporcionan
         let docente;
-        if (nombre_docente && apellido_docente) {
-            docente = await ModeloDocente.findOne({ where: { nombre: nombre_docente, apellido: apellido_docente } });
+        if (primerNombre_docente && primerApellido_docente) {
+            docente = await ModeloDocente.findOne({ where: { primerNombre: primerNombre_docente, primerApellido: primerApellido_docente } });
             if (!docente) {
-                return res.status(404).json({ error: 'Docente no encontrado' });
+                contenido.msj = 'Docente no encontrado';
+                return enviar(404, contenido, res);
             }
         }
 
-        // Buscar la carrera por nombre si se proporciona
         let carrera;
         if (nombre_carrera) {
             carrera = await ModeloCarrera.findOne({ where: { nombre_carrera } });
             if (!carrera) {
-                return res.status(404).json({ error: 'Carrera no encontrada' });
+                contenido.msj = 'Carrera no encontrada';
+                return enviar(404, contenido, res);
             }
         }
 
-        // Actualizar la asignatura
         await asignatura.update({
             nombre_asignatura: nombre_asignatura || asignatura.nombre_asignatura,
-            id_docente: docente ? docente.id_docente : asignatura.id_docente,
-            id_carrera: carrera ? carrera.id_carrera : asignatura.id_carrera
+            docenteId: docente ? docente.id : asignatura.docenteId,
+            carreraId: carrera ? carrera.id : asignatura.carreraId
         });
 
-        // Preparar la respuesta
-        const response = {
-            id_asignatura: asignatura.id_asignatura,
+        contenido.tipo = 1;
+        contenido.datos = {
+            id: asignatura.id,
             nombre_asignatura: asignatura.nombre_asignatura,
-            nombre_docente: docente ? `${docente.nombre} ${docente.apellido}` : `${asignatura.Docente?.nombre || "No asignado"} ${asignatura.Docente?.apellido || "No asignado"}`,
+            nombre_docente: docente ? `${docente.primerNombre} ${docente.primerApellido}` : `${asignatura.Docente?.primerNombre || "No asignado"} ${asignatura.Docente?.primerApellido || "No asignado"}`,
             nombre_carrera: carrera ? carrera.nombre_carrera : asignatura.Carrera?.nombre_carrera || "No asignada"
         };
-
-        return res.status(200).json(response);
+        contenido.msj = "Asignatura editada correctamente";
+        enviar(200, contenido, res);
     } catch (error) {
+        contenido.tipo = 0;
+        contenido.msj = "Error en el servidor al editar la asignatura";
+        enviar(500, contenido, res);
         console.log(error);
-        return res.status(400).json({ error: error.message });
     }
 };
 
 exports.eliminar = async (req, res) => {
-    const { id_asignatura } = req.query;
+    const { id } = req.query;
+    let contenido = { tipo: 0, datos: [], msj: [] };
 
     try {
-        const asignatura = await ModeloAsignatura.findOne({ where: { id_asignatura } });
+        const asignatura = await ModeloAsignatura.findOne({ where: { id } });
         if (!asignatura) {
-            return res.status(404).json({ error: 'Asignatura no encontrada' });
+            contenido.msj = "Asignatura no encontrada";
+            return enviar(404, contenido, res);
         }
 
         await asignatura.destroy();
-        return res.status(200).json({ message: 'Asignatura eliminada exitosamente' });
+        contenido.tipo = 1;
+        contenido.msj = "Asignatura eliminada correctamente";
+        enviar(200, contenido, res);
     } catch (error) {
-        console.log(error);
-        return res.status(400).json({ error: error.message });
+        contenido.tipo = 0;
+        contenido.msj = "Error en el servidor al eliminar la asignatura";
+        enviar(500, contenido, res);
+    }
+};
+// Filtros en general
+exports.busqueda = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+        var msjerror = "";
+        validacion.errors.forEach((r) => {
+            msjerror = msjerror + r.msg + ". ";
+        });
+        res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+        try {
+            const whereClause = {};
+            if (req.query.id_asignatura) whereClause.id_asignatura = req.query.id_asignatura;
+            if (req.query.nombre) whereClause.nombre_asignatura = req.query.nombre;
+
+            const busqueda = await ModeloAsignatura.findAll({
+                where: whereClause,
+                include: [
+                    {
+                        model: ModeloDocente,
+                        attributes: ['primerNombre', 'primerApellido']
+                    },
+                    {
+                        model: ModeloCarrera,
+                        attributes: ['nombre_carrera']
+                    }
+                ]
+            });
+            res.json(busqueda);
+        } catch (error) {
+            res.json(error);
+        }
     }
 };
 
-function enviar(status, contenido, res) {
-    res.status(status).json(contenido);
-}
+// Filtro para buscar por ID de Asignatura
+exports.busqueda_id = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+        var msjerror = "";
+        validacion.errors.forEach((r) => {
+            msjerror = msjerror + r.msg + ". ";
+        });
+        res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+        try {
+            const busqueda = await ModeloAsignatura.findOne({
+                where: { id_asignatura: req.query.id_asignatura },
+                include: [
+                    {
+                        model: ModeloDocente,
+                        attributes: ['primerNombre', 'primerApellido']
+                    },
+                    {
+                        model: ModeloCarrera,
+                        attributes: ['nombre_carrera']
+                    }
+                ]
+            });
+            res.json(busqueda);
+        } catch (error) {
+            res.json(error);
+        }
+    }
+};
+
+// Asegúrate de que la función esté exportada correctamente
+exports.busqueda_id = async (req, res) => {
+    const validacion = validationResult(req);
+    if (validacion.errors.length > 0) {
+        var msjerror = "";
+        validacion.errors.forEach((r) => {
+            msjerror = msjerror + r.msg + ". ";
+        });
+        res.json({ msj: "Hay errores en la petición", error: msjerror });
+    } else {
+        try {
+            const busqueda = await ModeloAsignatura.findOne({
+                where: { id_asignatura: req.query.id_asignatura },
+                include: [
+                    {
+                        model: ModeloDocente,
+                        attributes: ['primerNombre', 'primerApellido']
+                    },
+                    {
+                        model: ModeloCarrera,
+                        attributes: ['nombre_carrera']
+                    }
+                ]
+            });
+            res.json(busqueda);
+        } catch (error) {
+            res.json(error);
+        }
+    }
+};

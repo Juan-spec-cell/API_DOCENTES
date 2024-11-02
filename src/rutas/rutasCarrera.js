@@ -3,12 +3,14 @@ const { body, query } = require('express-validator');
 const controladorCarrera = require('../controladores/controladorCarrera');
 const ModeloCarrera = require('../modelos/carrera');
 const rutas = Router();
+
 /**
  * @swagger
  * tags:
  *   name: Carreras
  *   description: Gestion de Carreras
  */
+
 /**
  * @swagger
  * /carreras:
@@ -43,7 +45,7 @@ rutas.get('/', controladorCarrera.inicio);
  *                   items:
  *                     type: object
  *                     properties:
- *                       id_carrera:
+ *                       id:
  *                         type: integer
  *                         description: ID de la carrera.
  *                       nombre_carrera:
@@ -93,7 +95,7 @@ rutas.get('/listar', controladorCarrera.listar);
  *                 datos:
  *                   type: object
  *                   properties:
- *                     id_carrera:
+ *                     id:
  *                       type: integer
  *                       description: ID de la nueva carrera.
  *                 msj:
@@ -134,7 +136,7 @@ rutas.post('/guardar',
  *     tags: [Carreras]
  *     parameters:
  *       - in: query
- *         name: id_carrera
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -163,13 +165,13 @@ rutas.post('/guardar',
  *         description: Error en el servidor al editar la carrera.
  */
 rutas.put('/editar',
-    query("id_carrera")
+    query("id")
         .isInt().withMessage("El id de la carrera debe ser un entero")
         .custom(async value => {
             if (!value) {
                 throw new Error('El id no permite valores nulos');
             } else {
-                const buscarCarrera = await ModeloCarrera.findOne({ where: { id_carrera: value } });
+                const buscarCarrera = await ModeloCarrera.findOne({ where: { id: value } });
                 if (!buscarCarrera) {
                     throw new Error('El id de la carrera no existe');
                 }
@@ -192,7 +194,7 @@ rutas.put('/editar',
  *     tags: [Carreras]
  *     parameters:
  *       - in: query
- *         name: id_carrera
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -206,13 +208,13 @@ rutas.put('/editar',
  *         description: Error en el servidor al eliminar la carrera.
  */
 rutas.delete('/eliminar',
-    query("id_carrera")
+    query("id")
         .isInt().withMessage("El id de la carrera debe ser un entero")
         .custom(async value => {
             if (!value) {
                 throw new Error('El id no permite valores nulos');
             } else {
-                const buscarCarrera = await ModeloCarrera.findOne({ where: { id_carrera: value } });
+                const buscarCarrera = await ModeloCarrera.findOne({ where: { id: value } });
                 if (!buscarCarrera) {
                     throw new Error('El id de la carrera no existe');
                 }

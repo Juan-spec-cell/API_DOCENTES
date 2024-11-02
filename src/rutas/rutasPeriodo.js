@@ -4,7 +4,6 @@ const controladorPeriodo = require('../controladores/controladorPeriodo');
 const ModeloPeriodo = require('../modelos/periodo'); 
 const rutas = Router();
 
-
 /**
  * @swagger
  * tags:
@@ -22,7 +21,6 @@ const rutas = Router();
  *       200:
  *         description: Mensaje de bienvenida de la API.
  */
-
 rutas.get('/', controladorPeriodo.inicio);
 
 /**
@@ -47,7 +45,7 @@ rutas.get('/', controladorPeriodo.inicio);
  *                   items:
  *                     type: object
  *                     properties:
- *                       id_periodo:
+ *                       id:
  *                         type: integer
  *                         description: ID del periodo.
  *                       nombre_periodo:
@@ -68,8 +66,6 @@ rutas.get('/', controladorPeriodo.inicio);
  *       500:
  *         description: Error al cargar los datos de periodos.
  */
-
-
 rutas.get('/listar', controladorPeriodo.listar);
 
 /**
@@ -109,7 +105,7 @@ rutas.get('/listar', controladorPeriodo.listar);
  *                 datos:
  *                   type: object
  *                   properties:
- *                     id_periodo:
+ *                     id:
  *                       type: integer
  *                       description: ID del nuevo periodo.
  *                 msj:
@@ -153,7 +149,7 @@ rutas.post('/guardar',
  *     tags: [Periodos]
  *     parameters:
  *       - in: query
- *         name: id_periodo
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -187,10 +183,10 @@ rutas.post('/guardar',
  *         description: Error en el servidor al editar el periodo.
  */
 rutas.put('/editar',
-    query("id_periodo")
+    query("id")
         .isInt().withMessage("El id del periodo debe ser un entero")
         .custom(async value => {
-            const buscarPeriodo = await ModeloPeriodo.findOne({ where: { id_periodo: value } });
+            const buscarPeriodo = await ModeloPeriodo.findOne({ where: { id: value } });
             if (!buscarPeriodo) {
                 throw new Error('El id del periodo no existe');
             }
@@ -229,7 +225,7 @@ rutas.put('/editar',
  *     tags: [Periodos]
  *     parameters:
  *       - in: query
- *         name: id_periodo
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -243,10 +239,10 @@ rutas.put('/editar',
  *         description: Error en el servidor al eliminar el periodo.
  */
 rutas.delete('/eliminar',
-    query("id_periodo")
+    query("id")
         .isInt().withMessage("El id del periodo debe ser un entero")
         .custom(async value => {
-            const buscarPeriodo = await ModeloPeriodo.findOne({ where: { id_periodo: value } });
+            const buscarPeriodo = await ModeloPeriodo.findOne({ where: { id: value } });
             if (!buscarPeriodo) {
                 throw new Error('El id del periodo no existe');
             }
