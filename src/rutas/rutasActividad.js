@@ -32,6 +32,9 @@ const rutas = Router();
  *                   items:
  *                     type: object
  *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: ID de la actividad.
  *                       nombre_actividad:
  *                         type: string
  *                         description: Nombre de la actividad.
@@ -88,10 +91,14 @@ rutas.get('/listar', controladorActividad.listar);
  *                 format: date
  *                 description: Fecha de la actividad
  *     responses:
- *       200:
+ *       201:
  *         description: Actividad guardada
  *       400:
  *         description: Error en los datos proporcionados
+ *       404:
+ *         description: Asignatura no encontrada
+ *       500:
+ *         description: Error al guardar la actividad
  */
 rutas.post('/guardar',
     body("nombre_asignatura").notEmpty().withMessage('Ingrese un valor en el nombre de la asignatura'),
@@ -120,9 +127,6 @@ rutas.post('/guardar',
  *           schema:
  *             type: object
  *             properties:
- *               nombre_asignatura:
- *                 type: string
- *                 description: Nombre de la asignatura (opcional)
  *               tipo_actividad:
  *                 type: string
  *                 enum: [Acumulativo, Examen]
@@ -134,8 +138,12 @@ rutas.post('/guardar',
  *     responses:
  *       200:
  *         description: Actividad editada
+ *       404:
+ *         description: Actividad no encontrada
  *       400:
  *         description: Error en los datos proporcionados
+ *       500:
+ *         description: Error al editar la actividad
  */
 rutas.put('/editar',
     query("id")
@@ -150,7 +158,6 @@ rutas.put('/editar',
                 }
             }
         }),
-    body("nombre_asignatura").optional().isString().withMessage('El nombre de la asignatura debe ser una cadena de texto'),
     body("tipo_actividad").optional().isString().withMessage('El tipo de actividad debe ser una cadena de texto'),
     body("fecha").optional().isString().withMessage('La fecha debe ser una cadena de texto'),
     controladorActividad.editar
@@ -172,20 +179,19 @@ rutas.put('/editar',
  *     responses:
  *       200:
  *         description: Actividad eliminada
- *       400:
- *         description: Error en los datos proporcionados
+ *       404:
+ *         description: El id no existe
+ *       500:
+ *         description: Error al eliminar la actividad
  */
 rutas.delete('/eliminar',
     query("id")
         .isInt().withMessage("El id de la actividad debe ser un entero")
+        .notEmpty().withMessage('El id no permite valores nulos') // Se asegura que el ID no sea vacío
         .custom(async value => {
-            if (!value) {
-                throw new Error('El id no permite valores nulos');
-            } else {
-                const buscarActividad = await controladorActividad.buscarPorId(value);
-                if (!buscarActividad) {
-                    throw new Error('El id de la actividad no existe');
-                }
+            const buscarActividad = await ModeloActividad.findOne({ where: { id: value } });
+            if (!buscarActividad) {
+                throw new Error('El id de la actividad no existe');
             }
         }),
     controladorActividad.eliminar
