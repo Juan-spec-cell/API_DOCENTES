@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, query } = require('express-validator');
 const controladorUsuario = require('../controladores/controladorUsuario');
+const Usuarios = require('../modelos/usuario');
 const rutas = express.Router();
 
 /**
@@ -331,6 +332,159 @@ rutas.get('/buscar',
 rutas.get('/buscar_nombre',
     query('nombre').isString().withMessage('El nombre del usuario debe ser una cadena de texto'),
     controladorUsuario.buscarPorNombre
+);
+
+/**
+ * @swagger
+ * /usuarios/recuperar_contrasena:
+ *   post:
+ *     summary: Recupera la contraseña de un Usuario
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Email del usuario.
+ *     responses:
+ *       200:
+ *         description: Correo enviado correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Mensaje de éxito.
+ *       400:
+ *         description: Error en la validación de datos.
+ *       404:
+ *         description: Usuario no encontrado.
+ *       500:
+ *         description: Error en el servidor al enviar el correo.
+ */
+rutas.post('/recuperar_contrasena',
+    body('email')
+        .notEmpty().withMessage('El email del usuario es obligatorio')
+        .isEmail().withMessage('El email debe ser válido'),
+    controladorUsuario.recuperarContrasena
+);
+
+/**
+ * @swagger
+ * /usuarios/actualizar_contrasena:
+ *   post:
+ *     summary: Actualiza la contraseña de un Usuario
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Email del usuario.
+ *               contrasena:
+ *                 type: string
+ *                 description: Nueva contraseña del usuario.
+ *               pin:
+ *                 type: string
+ *                 description: PIN de recuperación.
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Mensaje de éxito.
+ *       400:
+ *         description: Error en la validación de datos.
+ *       404:
+ *         description: Usuario no encontrado o PIN incorrecto.
+ *       500:
+ *         description: Error en el servidor al actualizar la contraseña.
+ */
+rutas.post('/actualizar_contrasena',
+    body('email')
+        .notEmpty().withMessage('El email del usuario es obligatorio')
+        .isEmail().withMessage('El email debe ser válido'),
+    body('contrasena')
+        .notEmpty().withMessage('La contraseña es obligatoria')
+        .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
+    body('pin')
+        .notEmpty().withMessage('El PIN es obligatorio'),
+    controladorUsuario.actualizarContrasena
+);
+
+/**
+ * @swagger
+ * /usuarios/iniciar_sesion:
+ *   post:
+ *     summary: Inicia sesión de un Usuario
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               login:
+ *                 type: string
+ *                 description: Email o nombre del usuario.
+ *               contrasena:
+ *                 type: string
+ *                 description: Contraseña del usuario.
+ *     responses:
+ *       200:
+ *         description: Sesión iniciada correctamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 Token:
+ *                   type: string
+ *                   description: Token de autenticación.
+ *                 Usuario:
+ *                   type: object
+ *                   properties:
+ *                     login:
+ *                       type: string
+ *                       description: Nombre del usuario.
+ *                     tipo:
+ *                       type: string
+ *                       description: Tipo de usuario.
+ *                     correo:
+ *                       type: string
+ *                       description: Email del usuario.
+ *                     datoPersonales:
+ *                       type: object
+ *                       description: Datos personales del usuario.
+ *       400:
+ *         description: Error en la validación de datos.
+ *       404:
+ *         description: Usuario o contraseña incorrectos.
+ *       500:
+ *         description: Error en el servidor al iniciar sesión.
+ */
+rutas.post('/iniciar_sesion',
+    body('login')
+        .notEmpty().withMessage('El login es obligatorio'),
+    body('contrasena')
+        .notEmpty().withMessage('La contraseña es obligatoria'),
+    controladorUsuario.iniciarSesion
 );
 
 module.exports = rutas;
