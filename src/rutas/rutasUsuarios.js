@@ -3,6 +3,7 @@ const { body, query } = require('express-validator');
 const controladorUsuario = require('../controladores/controladorUsuario');
 const Usuarios = require('../modelos/usuario');
 const rutas = express.Router();
+const {Op} = require('sequelize');
 
 /**
  * @swagger
@@ -65,85 +66,6 @@ rutas.get('/', controladorUsuario.inicio);
  *         description: Error al cargar los datos de Usuarios.
  */
 rutas.get('/listar', controladorUsuario.listar);
-
-/**
- * @swagger
- * /usuarios/guardar:
- *   post:
- *     summary: Guarda un nuevo Usuario
- *     tags: [Usuarios]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nombre:
- *                 type: string
- *                 description: Nombre del usuario.
- *               email:
- *                 type: string
- *                 description: Email del usuario.
- *               contrasena:
- *                 type: string
- *                 description: Contraseña del usuario.
- *               tipoUsuario:
- *                 type: string
- *                 description: Tipo de usuario (Docente o Estudiante).
- *     responses:
- *       201:
- *         description: Usuario guardado correctamente.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tipo:
- *                   type: integer
- *                 datos:
- *                   type: object
- *                   properties:
- *                     id_usuario:
- *                       type: integer
- *                       description: ID del usuario.
- *                     nombre:
- *                       type: string
- *                       description: Nombre del usuario.
- *                     email:
- *                       type: string
- *                       description: Email del usuario.
- *                     tipoUsuario:
- *                       type: string
- *                       description: Tipo de usuario.
- *                 msj:
- *                   type: string
- *       400:
- *         description: Error en la validación de datos.
- *       500:
- *         description: Error en el servidor al guardar el usuario.
- */
-rutas.post('/guardar',
-    body('nombre')
-        .notEmpty().withMessage('El nombre del usuario es obligatorio')
-        .isLength({ min: 3, max: 100 }).withMessage('El nombre del usuario debe tener entre 3 y 100 caracteres'),
-    body('email')
-        .notEmpty().withMessage('El email del usuario es obligatorio')
-        .isEmail().withMessage('El email debe ser válido')
-        .custom(async value => {
-            const buscarUsuario = await Usuarios.findOne({ where: { email: value } });
-            if (buscarUsuario) {
-                throw new Error('El email ya está registrado');
-            }
-        }),
-    body('contrasena')
-        .notEmpty().withMessage('La contraseña es obligatoria')
-        .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-    body('tipoUsuario')
-        .notEmpty().withMessage('El tipo de usuario es obligatorio')
-        .isIn(['Docente', 'Estudiante']).withMessage('El tipo de usuario debe ser "Docente" o "Estudiante"'),
-    controladorUsuario.guardar
-);
 
 /**
  * @swagger

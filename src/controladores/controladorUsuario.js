@@ -40,41 +40,6 @@ exports.listar = async (req, res) => {
         res.status(500).json(contenido); // Responde con un error
     }
 };
-
-// Guarda un nuevo usuario
-exports.guardar = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() }); // Valida los datos de entrada
-
-    let { nombre, email, contrasena, tipoUsuario } = req.body;
-    tipoUsuario = tipoUsuario.trim().toLowerCase();
-    if (tipoUsuario === "docente" || tipoUsuario === "estudiante") {
-        tipoUsuario = tipoUsuario.charAt(0).toUpperCase() + tipoUsuario.slice(1); // Formatea el tipo de usuario
-    } else {
-        return res.status(400).json({ message: "El tipo de usuario debe ser 'Docente' o 'Estudiante'." }); // Valida el tipo de usuario
-    }
-
-    try {
-        const hash = await argon2.hash(contrasena, {
-            type: argon2.argon2id,
-            memoryCost: 2 ** 16,
-            timeCost: 4,
-            parallelism: 2,
-        }); // Hashea la contraseña
-
-        const nuevoUsuario = await Usuarios.create({
-            nombre,
-            email,
-            contrasena: hash,
-            tipoUsuario
-        }); // Crea un nuevo usuario
-
-        res.status(201).json(nuevoUsuario); // Responde con el nuevo usuario
-    } catch (error) {
-        res.status(500).json({ message: "Error en el servidor al guardar el usuario" }); // Responde con un error
-    }
-};
-
 // Edita un usuario existente
 exports.editar = async (req, res) => {
     const errors = validationResult(req);
