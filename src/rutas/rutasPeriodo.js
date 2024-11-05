@@ -2,7 +2,7 @@ const express = require('express');
 const { body, query } = require('express-validator');
 const controladorPeriodo = require('../controladores/controladorPeriodo');
 const rutas = express.Router();
-
+const ModeloPeriodo = require('../modelos/periodo');
 /**
  * @swagger
  * tags:
@@ -87,10 +87,6 @@ rutas.get('/listar', controladorPeriodo.listar);
  *                 type: string
  *                 format: date
  *                 description: Fecha de inicio del periodo.
- *               fecha_fin:
- *                 type: string
- *                 format: date
- *                 description: Fecha de fin del periodo.
  *     responses:
  *       201:
  *         description: Periodo guardado correctamente.
@@ -132,23 +128,23 @@ rutas.post('/guardar',
         .custom(async value => {
             if (value) {
                 const buscarPeriodo = await ModeloPeriodo.findOne({ where: { nombre_periodo: value } });
-                if (buscarPeriodo) {
+                if (!buscarPeriodo) {
                     throw new Error('El nombre del periodo ya existe');
                 }
             }
         }),
     body("fecha_inicio")
-        .notEmpty().withMessage('La fecha de inicio es obligatoria')
-        .isISO8601().withMessage('La fecha de inicio debe ser una fecha válida')
+        .isDate().withMessage('La fecha de inicio debe ser una fecha válida')
         .custom((value, { req }) => {
-            if (value && new Date(value) >= new Date(req.body.fecha_fin)) {
-                throw new Error('La fecha de inicio debe ser anterior a la fecha de fin');
+            if (value) {
+                const fechaInicio = new Date(value);
+                // Sumar 90 días a la fecha de inicio y asignarlo a fecha_fin
+                const nuevaFechaFin = new Date(fechaInicio);
+                nuevaFechaFin.setDate(nuevaFechaFin.getDate() + 90); // Sumar 90 días
+                req.body.fecha_fin = nuevaFechaFin.toDateString(); // Asignar fecha_fin automáticamente
             }
             return true;
         }),
-    body("fecha_fin")
-        .notEmpty().withMessage('La fecha de fin es obligatoria')
-        .isISO8601().withMessage('La fecha de fin debe ser una fecha válida'),
     controladorPeriodo.guardar
 );
 
@@ -160,7 +156,7 @@ rutas.post('/guardar',
  *     tags: [Periodos]
  *     parameters:
  *       - in: query
- *         name: id_periodo
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -179,10 +175,6 @@ rutas.post('/guardar',
  *                 type: string
  *                 format: date
  *                 description: Fecha de inicio del periodo.
- *               fecha_fin:
- *                 type: string
- *                 format: date
- *                 description: Fecha de fin del periodo.
  *     responses:
  *       200:
  *         description: Periodo editado correctamente.
@@ -203,7 +195,7 @@ rutas.post('/guardar',
  *         description: Error en el servidor al editar el periodo.
  */
 rutas.put('/editar',
-    query('id_periodo').isInt().withMessage('El id del periodo debe ser un entero'),
+    query('id').isInt().withMessage('El id del periodo debe ser un entero'),
     body('nombre_periodo')
         .optional()
         .isLength({ min: 3, max: 100 }).withMessage('El nombre del periodo debe tener entre 3 y 100 caracteres')
@@ -216,17 +208,17 @@ rutas.put('/editar',
             }
         }),
     body("fecha_inicio")
-        .optional()
-        .isISO8601().withMessage('La fecha de inicio debe ser una fecha válida')
+        .isDate().withMessage('La fecha de inicio debe ser una fecha válida')
         .custom((value, { req }) => {
-            if (value && new Date(value) >= new Date(req.body.fecha_fin)) {
-                throw new Error('La fecha de inicio debe ser anterior a la fecha de fin');
+            if (value) {
+                const fechaInicio = new Date(value);
+                // Sumar 90 días a la fecha de inicio y asignarlo a fecha_fin
+                const nuevaFechaFin = new Date(fechaInicio);
+                nuevaFechaFin.setDate(nuevaFechaFin.getDate() + 90); // Sumar 90 días
+                req.body.fecha_fin = nuevaFechaFin.toDateString(); // Asignar fecha_fin automáticamente
             }
             return true;
         }),
-    body("fecha_fin")
-        .optional()
-        .isISO8601().withMessage('La fecha de fin debe ser una fecha válida'),
     controladorPeriodo.editar
 );
 
@@ -238,7 +230,7 @@ rutas.put('/editar',
  *     tags: [Periodos]
  *     parameters:
  *       - in: query
- *         name: id_periodo
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -261,7 +253,7 @@ rutas.put('/editar',
  *         description: Error en el servidor al eliminar el periodo.
  */
 rutas.delete('/eliminar',
-    query('id_periodo').isInt().withMessage('El id del periodo debe ser un entero'),
+    query('id').isInt().withMessage('El id del periodo debe ser un entero'),
     controladorPeriodo.eliminar
 );
 
@@ -273,7 +265,7 @@ rutas.delete('/eliminar',
  *     tags: [Periodos]
  *     parameters:
  *       - in: query
- *         name: id_periodo
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -306,7 +298,7 @@ rutas.delete('/eliminar',
  *         description: Error en el servidor al buscar el periodo.
  */
 rutas.get('/buscar',
-    query('id_periodo').isInt().withMessage('El id del periodo debe ser un entero'),
+    query('id').isInt().withMessage('El id del periodo debe ser un entero'),
     controladorPeriodo.buscarPorId
 );
 
