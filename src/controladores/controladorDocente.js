@@ -23,7 +23,7 @@ exports.listar = async (req, res) => {
 
         contenido.tipo = 1;
         contenido.datos = data.map(docente => ({
-            id_docente: docente.id, 
+            id_docente: docente.id,
             primerNombre: docente.primerNombre,
             primerApellido: docente.primerApellido,
             email: docente.email
@@ -44,11 +44,11 @@ exports.guardar = async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json(errors.array());
     }
-    
+
     const t = await db.transaction();
     try {
         const { primerNombre, segundoNombre, primerApellido, segundoApellido, email, contrasena } = req.body;
-        
+
         // Hashear la contraseña
         const hash = await argon2.hash(contrasena, {
             type: argon2.argon2id,
@@ -59,11 +59,11 @@ exports.guardar = async (req, res) => {
 
         // Crear el usuario con tipoUsuario como 'docente'
         const usuario = await ModeloUsuario.create(
-            { 
-                nombre: `${primerNombre} ${segundoNombre || ''} ${primerApellido} ${segundoApellido || ''}`, 
-                email, 
+            {
+                nombre: `${primerNombre} ${segundoNombre || ''} ${primerApellido} ${segundoApellido || ''}`,
+                email,
                 tipoUsuario: 'Docente', // Asignar tipo 'docente' por defecto
-                contrasena: hash 
+                contrasena: hash
             },
             { transaction: t }
         );
@@ -111,7 +111,7 @@ exports.editar = async (req, res) => {
 
         // Actualizar el docente
         await docente.update(
-            { nombre: primerNombre, apellido: primerApellido, email },
+            { primerNombre: primerNombre, primerApellido: primerApellido, email },
             { transaction: t }
         );
 
@@ -149,7 +149,7 @@ exports.eliminar = async (req, res) => {
         const { id } = req.query;
 
         // Buscar el docente por id
-        const docenteExistente = await ModeloDocente.findOne({ where: { id }, transaction: t });
+        const docenteExistente = await ModeloDocente.findOne({ where: { id: id }, transaction: t });
         if (!docenteExistente) {
             contenido.msj = "El docente no existe";
             return enviar(404, contenido, res);
@@ -182,45 +182,45 @@ exports.eliminar = async (req, res) => {
 exports.busqueda_id = async (req, res) => {
     const validacion = validationResult(req);
     if (validacion.errors.length > 0) {
-      let msjerror = validacion.errors.map((r) => r.msg).join(". ");
-      return res.status(400).json({ msj: "Hay errores en la petición", error: msjerror });
+        let msjerror = validacion.errors.map((r) => r.msg).join(". ");
+        return res.status(400).json({ msj: "Hay errores en la petición", error: msjerror });
     }
-  
+
     const idDocente = req.query.id; // Cambia 'id' si tienes un nombre diferente
     console.log("Buscando docente con ID:", idDocente);
-  
+
     if (!idDocente) {
-      return res.status(400).json({ msj: "ID del docente no proporcionado" });
+        return res.status(400).json({ msj: "ID del docente no proporcionado" });
     }
-  
+
     try {
-      const busqueda = await ModeloDocente.findOne({
-        where: { id: idDocente },
-        include: [{
-          model: ModeloUsuario, // Asegúrate de importar el modelo de Usuarios
-          attributes: ['nombre'], // Solo traer el nombre
-        }],
-        attributes: ['primerNombre', 'primerApellido', 'createdAt'], // Traer los atributos requeridos
-      });
-  
-      if (!busqueda) {
-        return res.status(404).json({ msj: "Docente no encontrado" });
-      }
-  
-      // Formatear la fecha
-      const respuesta = {
-        primerNombre: busqueda.primerNombre,
-        primerApellido: busqueda.primerApellido,
-        nombreUsuario: busqueda.Usuario.nombre, // Acceder al nombre del usuario
-        fechaCreacion: moment(busqueda.createdAt).format('YYYY-MM-DD HH:mm:ss') // Formatear la fecha
-      };
-      
-      res.json(respuesta);
+        const busqueda = await ModeloDocente.findOne({
+            where: { id: idDocente },
+            include: [{
+                model: ModeloUsuario, // Asegúrate de importar el modelo de Usuarios
+                attributes: ['nombre'], // Solo traer el nombre
+            }],
+            attributes: ['primerNombre', 'primerApellido', 'createdAt'], // Traer los atributos requeridos
+        });
+
+        if (!busqueda) {
+            return res.status(404).json({ msj: "Docente no encontrado" });
+        }
+
+        // Formatear la fecha
+        const respuesta = {
+            primerNombre: busqueda.primerNombre,
+            primerApellido: busqueda.primerApellido,
+            nombreUsuario: busqueda.Usuario.nombre, // Acceder al nombre del usuario
+            fechaCreacion: moment(busqueda.createdAt).format('YYYY-MM-DD HH:mm:ss') // Formatear la fecha
+        };
+
+        res.json(respuesta);
     } catch (error) {
-      console.error("Error en la búsqueda:", error);
-      res.status(500).json({ msj: "Error en la búsqueda", error: error.message });
+        console.error("Error en la búsqueda:", error);
+        res.status(500).json({ msj: "Error en la búsqueda", error: error.message });
     }
-  };
+};
 
 
 
@@ -242,20 +242,20 @@ exports.busqueda_nombre = async (req, res) => {
                     { segundoNombre: { [Op.like]: `%${segundoNombre}%` } },
                     { primerApellido: { [Op.like]: `%${primerApellido}%` } },
                     { segundoApellido: { [Op.like]: `%${segundoApellido}%` } },
-                    { 
+                    {
                         [Op.and]: [
                             { primerNombre: { [Op.like]: `%${primerNombre}%` } },
                             { segundoNombre: { [Op.like]: `%${segundoNombre}%` } }
                         ]
                     },
-                    { 
+                    {
                         [Op.and]: [
                             { primerNombre: { [Op.like]: `%${primerNombre}%` } },
                             { segundoNombre: { [Op.like]: `%${segundoNombre}%` } },
                             { primerApellido: { [Op.like]: `%${primerApellido}%` } }
                         ]
                     },
-                    { 
+                    {
                         [Op.and]: [
                             { primerNombre: { [Op.like]: `%${primerNombre}%` } },
                             { segundoNombre: { [Op.like]: `%${segundoNombre}%` } },
@@ -265,7 +265,7 @@ exports.busqueda_nombre = async (req, res) => {
                     }
                 ]
             };
-            
+
             // Busca el docente incluyendo la relación con el usuario
             const busqueda = await ModeloDocente.findOne({
                 where: whereClause,

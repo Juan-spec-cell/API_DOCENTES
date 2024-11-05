@@ -88,7 +88,7 @@ exports.editar = async (req, res) => {
     }
 
     // Obtenemos el id del periodo y los nuevos datos del cuerpo de la solicitud
-    const { id_periodo } = req.query;
+    const { id } = req.query;
     const { nombre_periodo, fecha_inicio, fecha_fin } = req.body;
     let contenido = {
         tipo: 0,
@@ -98,7 +98,7 @@ exports.editar = async (req, res) => {
 
     try {
         // Buscamos el periodo en la base de datos
-        const periodoExistente = await ModeloPeriodo.findOne({ where: { id: id_periodo } });
+        const periodoExistente = await ModeloPeriodo.findOne({ where: { id: id } });
         if (!periodoExistente) {
             // Si no existe, enviamos un mensaje de error
             contenido.msj = "El periodo no existe";
@@ -110,7 +110,7 @@ exports.editar = async (req, res) => {
             nombre_periodo,
             fecha_inicio,
             fecha_fin
-        }, { where: { id: id_periodo } });
+        }, { where: { id: id } });
 
         contenido.tipo = 1;
         contenido.msj = "Periodo editado correctamente";
@@ -126,7 +126,7 @@ exports.editar = async (req, res) => {
 // Función que elimina un periodo
 exports.eliminar = async (req, res) => {
     // Obtenemos el id del periodo que queremos eliminar
-    const { id_periodo } = req.query;
+    const { id } = req.query;
     let contenido = {
         tipo: 0,
         datos: [],
@@ -135,7 +135,7 @@ exports.eliminar = async (req, res) => {
 
     try {
         // Buscamos el periodo en la base de datos
-        const periodoExistente = await ModeloPeriodo.findOne({ where: { id: id_periodo } });
+        const periodoExistente = await ModeloPeriodo.findOne({ where: { id: id } });
         if (!periodoExistente) {
             // Si no existe, enviamos un mensaje de error
             contenido.msj = "El periodo no existe";
@@ -143,7 +143,7 @@ exports.eliminar = async (req, res) => {
         }
 
         // Eliminamos el periodo de la base de datos
-        await ModeloPeriodo.destroy({ where: { id: id_periodo } });
+        await ModeloPeriodo.destroy({ where: { id: id } });
         contenido.tipo = 1;
         contenido.msj = "Periodo eliminado correctamente";
         enviar(200, contenido, res);
@@ -158,7 +158,7 @@ exports.eliminar = async (req, res) => {
 // Función que busca un periodo por su id
 exports.buscarPorId = async (req, res) => {
     // Obtenemos el id del periodo que queremos buscar
-    const { id_periodo } = req.query;
+    const { id } = req.query;
     let contenido = {
         tipo: 0,
         datos: [],
@@ -167,7 +167,7 @@ exports.buscarPorId = async (req, res) => {
 
     try {
         // Buscamos el periodo en la base de datos
-        const periodo = await ModeloPeriodo.findOne({ where: { id: id_periodo } });
+        const periodo = await ModeloPeriodo.findOne({ where: { id: id } });
         if (!periodo) {
             // Si no existe, enviamos un mensaje de error
             contenido.msj = "Periodo no encontrado";
@@ -177,7 +177,7 @@ exports.buscarPorId = async (req, res) => {
         // Transformamos los datos y los enviamos
         contenido.tipo = 1;
         contenido.datos = {
-            id_periodo: periodo.id,
+            id: periodo.id,
             nombre_periodo: periodo.nombre_periodo,
             fecha_inicio: moment(periodo.fecha_inicio).format('YYYY-MM-DD'),
             fecha_fin: moment(periodo.fecha_fin).format('YYYY-MM-DD')

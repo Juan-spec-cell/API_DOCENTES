@@ -2,7 +2,8 @@ const express = require('express');
 const { body, query } = require('express-validator');
 const controladorEstudiante = require('../controladores/controladorEstudiante');
 const rutas = express.Router();
-
+const ModeloCarrera = require('../modelos/carrera');
+const ModeloEstudiante = require('../modelos/estudiante');
 /**
  * @swagger
  * tags:
@@ -99,6 +100,9 @@ rutas.get('/listar', controladorEstudiante.listar);
  *               contrasena:
  *                 type: string
  *                 description: Contraseña del estudiante.
+ *               carreraId:
+ *                 type: integer
+ *                 description: Carrera del estudiante.
  *     responses:
  *       201:
  *         description: Estudiante guardado correctamente.
@@ -124,6 +128,9 @@ rutas.get('/listar', controladorEstudiante.listar);
  *                     email:
  *                       type: string
  *                       description: Email del estudiante.
+ *                     carreraId:
+ *                      type: integer
+ *                      description: Carrera del estudiante.
  *                 msj:
  *                   type: string
  *       400:
@@ -146,6 +153,7 @@ rutas.post(
         .isString().withMessage('La contraseña debe ser una cadena de texto')
         .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
         .notEmpty().withMessage('La contraseña no puede estar vacía'),
+    body("carreraId").isInt({ min: 1 }).withMessage('El carreraId debe ser un número entero positivo'),
     controladorEstudiante.guardar
 );
 
@@ -157,7 +165,7 @@ rutas.post(
  *     tags: [Estudiantes]
  *     parameters:
  *       - in: query
- *         name: id_estudiante
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -178,8 +186,8 @@ rutas.post(
  *               email:
  *                 type: string
  *                 description: Email del estudiante.
- *               nombre_carrera:
- *                 type: string
+ *               carreraId:
+ *                 type: integer
  *                 description: Nombre de la carrera.
  *     responses:
  *       200:
@@ -206,8 +214,8 @@ rutas.post(
  *                     email:
  *                       type: string
  *                       description: Email del estudiante.
- *                     nombre_carrera:
- *                       type: string
+ *                     carreraId:
+ *                       type: integer
  *                       description: Nombre de la carrera.
  *                 msj:
  *                   type: string
@@ -217,7 +225,15 @@ rutas.post(
  *         description: Error en el servidor al editar el estudiante.
  */
 rutas.put('/editar',
-    query("id_estudiante").isInt().withMessage("El id del estudiante debe ser un entero"),
+    query('id').isInt().withMessage('El ID debe ser un número entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarCliente = await ModeloEstudiante.findByPk(value);
+                if (!buscarCliente) {
+                    throw new Error('Estudiante no encontrado');
+                }
+            }
+        }),
     body('primerNombre').notEmpty().withMessage('El primer nombre es obligatorio')
         .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
     body('primerApellido').notEmpty().withMessage('El primer apellido es obligatorio')
@@ -225,9 +241,7 @@ rutas.put('/editar',
     body("email")
         .isEmail().withMessage('El email debe ser una dirección de correo válida')
         .notEmpty().withMessage('El email no puede estar vacío'),
-    body("nombre_carrera")
-        .isString().withMessage('El nombre de la carrera debe ser una cadena de texto')
-        .notEmpty().withMessage('El nombre de la carrera no puede estar vacío'),
+    body("carreraId").isInt({ min: 1 }).withMessage('El carreraId debe ser un número entero positivo'),
     controladorEstudiante.editar
 );
 
@@ -239,7 +253,7 @@ rutas.put('/editar',
  *     tags: [Estudiantes]
  *     parameters:
  *       - in: query
- *         name: id_estudiante
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -274,7 +288,7 @@ rutas.delete('/eliminar',
  *     tags: [Estudiantes]
  *     parameters:
  *       - in: query
- *         name: id_estudiante
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
@@ -317,7 +331,7 @@ rutas.delete('/eliminar',
  *         description: Error en el servidor al buscar el estudiante.
  */
 rutas.get('/busqueda_id',
-    query("id_estudiante").isInt().withMessage("El id del estudiante debe ser un entero"),
+    query("id").isInt().withMessage("El id del estudiante debe ser un entero"),
     controladorEstudiante.busqueda_id
 );
 
