@@ -16,7 +16,25 @@ const options = {
         url: 'http://localhost:3002/api', 
         description: "API del sistema de Docentes"
       },
+      {
+        url: 'http://192.168.50.31:3002/api', 
+        description: "API del sistema de Docentes con"
+      },
     ],
+    components: {
+      securitySchemes:{
+        BearerAuth:{
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    },
+    security:[
+      {
+        BearerAuth: []
+      }
+    ]
   },
   apis: [path.join(__dirname, '../rutas/**/*.js')], 
 };

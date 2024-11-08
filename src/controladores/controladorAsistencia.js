@@ -1,6 +1,6 @@
 const ModeloAsistencia = require('../modelos/asistencia');
-const ModeloEstudiante = require('../modelos/estudiante');
-const ModeloDocente = require('../modelos/docente');
+const ModeloEstudiante = require('../modelos/Estudiante');
+const ModeloDocente = require('../modelos/Docente');
 const ModeloCarrera = require('../modelos/carrera');
 const ModeloAsignatura = require('../modelos/asignatura');
 const { enviar, errores } = require('../configuracion/ayuda');

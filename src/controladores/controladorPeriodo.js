@@ -28,7 +28,7 @@ exports.listar = async (req, res) => {
         contenido.tipo = 1; // Cambiamos a 1 porque la operación fue exitosa
         // Transformamos los datos para incluir fechas en un formato específico
         contenido.datos = data.map(periodo => ({
-            id_periodo: periodo.id,
+            id: periodo.id,
             nombre_periodo: periodo.nombre_periodo,
             fecha_inicio: moment(periodo.fecha_inicio).format('YYYY-MM-DD'),
             fecha_fin: moment(periodo.fecha_fin).format('YYYY-MM-DD')
@@ -49,6 +49,7 @@ exports.guardar = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return enviar(400, { tipo: 0, msj: errores(errors) }, res);
+        console.log(error);
     }
 
     // Obtenemos los datos del cuerpo de la solicitud

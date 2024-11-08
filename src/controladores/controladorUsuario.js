@@ -1,6 +1,6 @@
 const Usuarios = require("../modelos/usuario"); // Importa el modelo de Usuarios
-const ModeloDocente = require("../modelos/docente"); // Importa el modelo de Docente
-const ModeloEstudiante = require("../modelos/estudiante"); // Importa el modelo de Estudiante
+const ModeloDocente = require("../modelos/Docente"); // Importa el modelo de Docente
+const ModeloEstudiante = require("../modelos/Estudiante"); // Importa el modelo de Estudiante
 const { validationResult } = require("express-validator"); // Importa el validador de express
 const { Op } = require("sequelize"); // Importa operadores de Sequelize
 const { enviarCorreo } = require("../configuracion/correo"); // Importa la función para enviar correos

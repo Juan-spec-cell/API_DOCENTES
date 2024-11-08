@@ -1,4 +1,4 @@
-const ModeloEstudiante = require('../modelos/estudiante');
+const ModeloEstudiante = require('../modelos/Estudiante');
 const ModeloUsuario = require('../modelos/usuario');
 const ModeloCarrera = require('../modelos/carrera');
 const { enviar, errores } = require('../configuracion/ayuda');

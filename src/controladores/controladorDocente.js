@@ -1,4 +1,4 @@
-const ModeloDocente = require('../modelos/docente');
+const ModeloDocente = require('../modelos/Docente');
 const ModeloUsuario = require('../modelos/usuario');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
