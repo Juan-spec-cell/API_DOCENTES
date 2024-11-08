@@ -58,7 +58,6 @@ exports.guardar = async (req, res) => {
         datos: [],
         msj: [],
     };
-
     try {
         // Creamos un nuevo periodo en la base de datos
         const nuevoPeriodo = await ModeloPeriodo.create({
@@ -75,8 +74,8 @@ exports.guardar = async (req, res) => {
         // En caso de error, enviamos un mensaje de error
         contenido.tipo = 0;
         contenido.msj = "Error en el servidor al guardar el periodo";
-        enviar(500, contenido, res);
-    }
+        enviar(500, contenido, res);
+    }
 };
 
 // Función que edita un periodo existente

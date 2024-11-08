@@ -268,23 +268,12 @@ rutas.get('/busqueda/id', controladorDocente.busqueda_id);
  *           type: string
  *           description: Primer nombre del docente a buscar
  *       - in: query
- *         name: segundoNombre
- *         required: false
- *         schema:
- *           type: string
- *           description: Segundo nombre del docente a buscar
- *       - in: query
  *         name: primerApellido
  *         required: false
  *         schema:
  *           type: string
  *           description: Primer apellido del docente a buscar
- *       - in: query
- *         name: segundoApellido
- *         required: false
- *         schema:
- *           type: string
- *           description: Segundo apellido del docente a buscar
+
  *     responses:
  *       200:
  *         description: Docente encontrado
