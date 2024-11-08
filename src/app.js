@@ -43,6 +43,8 @@ app.use('/api/calificaciones', require('./rutas/rutasCalificacion'));
 app.use('/api/estudiantes', require('./rutas/rutasEstudiante'));
 app.use('/api/matriculas', require('./rutas/rutasMatricula'));
 app.use('/api/periodos', require('./rutas/rutasPeriodo'));
+//añadiendo ruta para imagenes
+//app.use('/api/imagenes', express.static(path))
 app.use('/api/usuarios', require('./rutas/rutasUsuarios')); // Ruta para gestionar usuarios
 
 // Conexión a la base de datos y sincronización de modelos
