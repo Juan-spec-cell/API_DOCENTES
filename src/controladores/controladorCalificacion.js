@@ -70,7 +70,11 @@ exports.guardar = async (req, res) => {
                     primerApellido: apellido_estudiante.split(' ')[0]
                 }
             });
-            if (!estudiante) return res.status(404).json({ error: 'Estudiante no encontrado' });
+            if (!estudiante) {
+                console.log('Error: Estudiante no encontrado'); // Puedes poner el mensaje de error o el objeto 'estudiante' si lo necesitas
+                return res.status(404).json({ error: 'Estudiante no encontrado' });
+            }
+            
 
             // Buscar la asignatura por nombre
             const asignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura } });
@@ -86,7 +90,7 @@ exports.guardar = async (req, res) => {
             res.json({
                 tipo: 1,
                 datos: {
-                    id_calificacion: nuevaCalificacion.id,
+                    id: nuevaCalificacion.id,
                     nombre_estudiante: `${estudiante.primerNombre} ${estudiante.segundoNombre || ''}`.trim(),
                     apellido_estudiante: `${estudiante.primerApellido} ${estudiante.segundoApellido || ''}`.trim(),
                     nombre_asignatura: asignatura.nombre_asignatura,
@@ -143,7 +147,7 @@ exports.editar = async (req, res) => {
             res.json({
                 tipo: 1,
                 datos: {
-                    id_calificacion: id,
+                    id: id,
                     nombre_estudiante: `${estudiante.primerNombre} ${estudiante.segundoNombre || ''}`.trim(),
                     apellido_estudiante: `${estudiante.primerApellido} ${estudiante.segundoApellido || ''}`.trim(),
                     nombre_asignatura: asignatura.nombre_asignatura,
