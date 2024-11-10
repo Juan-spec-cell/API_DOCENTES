@@ -128,7 +128,7 @@ rutas.post('/guardar',
         .custom(async value => {
             if (value) {
                 const buscarPeriodo = await ModeloPeriodo.findOne({ where: { nombre_periodo: value } });
-                if (!buscarPeriodo) {
+                if (buscarPeriodo) {
                     throw new Error('El nombre del periodo ya existe');
                 }
             }
