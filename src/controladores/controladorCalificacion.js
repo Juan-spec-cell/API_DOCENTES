@@ -1,5 +1,5 @@
 const ModeloCalificacion = require('../modelos/calificacion');
-const ModeloEstudiante = require('../modelos/estudiante');
+const ModeloEstudiante = require('../modelos/Estudiante');
 const ModeloAsignatura = require('../modelos/asignatura');
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');

@@ -20,6 +20,8 @@ const calificacion = db.define(
 estudiante.hasMany(calificacion, { foreignKey: 'estudianteId' });
 calificacion.belongsTo(estudiante, { foreignKey: 'estudianteId' });
 
+
+//Verificacion con el ing
 asignatura.hasMany(calificacion, { foreignKey: 'asignaturaId' });
 calificacion.belongsTo(asignatura, { foreignKey: 'asignaturaId' });
 

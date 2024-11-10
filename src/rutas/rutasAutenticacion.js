@@ -14,4 +14,17 @@ rutas.post(
   controladoAuten.IniciarSesion
 );
 rutas.get("/error", controladoAuten.Error);
+
+rutas.post(
+  "/recuperar_contrasena",
+  body("correo")
+    .isEmail()
+    .withMessage("Debe proporcionar un correo electrónico válido"),
+  validarCampos,
+  controladoAuten.recuperarContrasena
+);
+
+
+
+
 module.exports = rutas;

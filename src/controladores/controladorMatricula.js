@@ -1,5 +1,5 @@
 const ModeloMatricula = require('../modelos/matricula');
-const ModeloEstudiante = require('../modelos/estudiante');
+const ModeloEstudiante = require('../modelos/Estudiante');
 const ModeloPeriodo = require('../modelos/periodo');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
