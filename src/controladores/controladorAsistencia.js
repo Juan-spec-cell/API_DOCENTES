@@ -144,7 +144,7 @@ exports.editar = async (req, res) => {
 
 
 exports.eliminar = async (req, res) => {
-    const { id_asistencia } = req.query;
+    const { id } = req.query;
     let contenido = {
         tipo: 0,
         datos: [],
@@ -152,13 +152,13 @@ exports.eliminar = async (req, res) => {
     };
 
     try {
-        const asistenciaExistente = await ModeloAsistencia.findOne({ where: { id: id_asistencia } });
+        const asistenciaExistente = await ModeloAsistencia.findOne({ where: { id: id } });
         if (!asistenciaExistente) {
             contenido.msj = "La asistencia no existe";
             return enviar(404, contenido, res);
         }
 
-        await ModeloAsistencia.destroy({ where: { id: id_asistencia } });
+        await ModeloAsistencia.destroy({ where: { id: id } });
         contenido.tipo = 1;
         contenido.msj = "Asistencia eliminada correctamente";
         enviar(200, contenido, res);
@@ -167,6 +167,7 @@ exports.eliminar = async (req, res) => {
         contenido.tipo = 0;
         contenido.msj = "Error en el servidor al eliminar la asistencia";
         enviar(500, contenido, res);
+        console.log(error);
     }
 };
 /******************************** Filtros ************************************/

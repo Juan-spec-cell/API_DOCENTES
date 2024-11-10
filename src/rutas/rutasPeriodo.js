@@ -87,6 +87,7 @@ rutas.get('/listar', controladorPeriodo.listar);
  *                 type: string
  *                 format: date
  *                 description: Fecha de inicio del periodo.
+ *              
  *     responses:
  *       201:
  *         description: Periodo guardado correctamente.
@@ -202,7 +203,7 @@ rutas.put('/editar',
         .custom(async value => {
             if (value) {
                 const buscarPeriodo = await ModeloPeriodo.findOne({ where: { nombre_periodo: value } });
-                if (buscarPeriodo) {
+                if (!buscarPeriodo) {
                     throw new Error('El nombre del periodo ya existe');
                 }
             }

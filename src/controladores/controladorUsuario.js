@@ -40,54 +40,6 @@ exports.listar = async (req, res) => {
         res.status(500).json(contenido); // Responde con un error
     }
 };
-// Edita un usuario existente
-exports.editar = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() }); // Valida los datos de entrada
-
-    const { id_usuario } = req.query;
-    const { nombre, email, tipoUsuario } = req.body;
-
-    try {
-        const usuarioExistente = await Usuarios.findOne({ where: { id: id_usuario } });
-        if (!usuarioExistente) {
-            return res.status(404).json({ message: "El usuario no existe" }); // Verifica si el usuario existe
-        }
-
-        await Usuarios.update({
-            nombre,
-            email,
-            tipoUsuario
-        }, { where: { id: id_usuario } }); // Actualiza el usuario
-
-        res.status(200).json({ message: "Usuario editado correctamente" }); // Responde con éxito
-    } catch (error) {
-        res.status(500).json({ message: "Error en el servidor al editar el usuario" }); // Responde con un error
-    }
-};
-
-// Elimina un usuario
-exports.eliminar = async (req, res) => {
-    const { id_usuario } = req.query;
-
-    try {
-        const usuarioExistente = await Usuarios.findOne({ where: { id: id_usuario } });
-        if (!usuarioExistente) {
-            return res.status(404).json({ message: "El usuario no existe" }); // Verifica si el usuario existe
-        }
-
-        // Elimina registros relacionados en Docente y Estudiante
-        await ModeloDocente.destroy({ where: { usuarioId: id_usuario } });
-        await ModeloEstudiante.destroy({ where: { usuarioId: id_usuario } });
-
-        // Elimina el usuario
-        await Usuarios.destroy({ where: { id: id_usuario } });
-        res.status(200).json({ message: "Usuario eliminado correctamente" }); // Responde con éxito
-    } catch (error) {
-        res.status(500).json({ message: "Error en el servidor al eliminar el usuario" }); // Responde con un error
-        console.log(error); 
-    }
-};
 
 // Busca un usuario por ID
 exports.buscarPorId = async (req, res) => {
