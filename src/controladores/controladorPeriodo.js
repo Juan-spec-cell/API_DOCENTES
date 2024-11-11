@@ -220,7 +220,7 @@ exports.buscarPorNombre = async (req, res) => {
         // Transformamos los datos y los enviamos
         contenido.tipo = 1;
         contenido.datos = periodos.map(periodo => ({
-            id_periodo: periodo.id,
+            id: periodo.id,
             nombre_periodo: periodo.nombre_periodo,
             fecha_inicio: moment(periodo.fecha_inicio).format('YYYY-MM-DD'),
             fecha_fin: moment(periodo.fecha_fin).format('YYYY-MM-DD')

@@ -8,6 +8,7 @@ const db = require('./configuracion/db');
 const swagger = require('./documentacion/swagger');
 const sincronizarModelos = require('./configuracion/sincronizar_modelos');
 const passport = require('passport');
+const path = require('path');
 
 const PORT = process.env.PORT || 3002;
 const app = express();
@@ -44,7 +45,8 @@ app.use('/api/estudiantes', require('./rutas/rutasEstudiante'));
 app.use('/api/matriculas', require('./rutas/rutasMatricula'));
 app.use('/api/periodos', require('./rutas/rutasPeriodo'));
 //añadiendo ruta para imagenes
-//app.use('/api/imagenes', express.static(path.join(__dirname, '../public/img')));
+app.use('/api/archivos' , require('./rutas/rutasArchivo'));
+app.use('/api/imagenes', express.static(path.join(__dirname, '../public/img')));
 app.use('/api/usuarios', require('./rutas/rutasUsuarios')); // Ruta para gestionar usuarios
 
 // Conexión a la base de datos y sincronización de modelos

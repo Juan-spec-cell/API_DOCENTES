@@ -1,6 +1,6 @@
 const ModeloAsistencia = require('../modelos/asistencia');
-const ModeloEstudiante = require('../modelos/Estudiante');
-const ModeloDocente = require('../modelos/Docente');
+const ModeloEstudiante = require('../modelos/estudiante');
+const ModeloDocente = require('../modelos/docente');
 const ModeloCarrera = require('../modelos/carrera');
 const ModeloAsignatura = require('../modelos/asignatura');
 const { enviar, errores } = require('../configuracion/ayuda');
@@ -54,7 +54,7 @@ exports.listar = async (req, res) => {
 };
 
 exports.guardar = async (req, res) => {
-    const { nombre_estudiante, apellido_estudiante, nombre_asignatura, fecha, estado } = req.body;
+    const { nombre_estudiante, apellido_estudiante, nombre_asignatura, fecha, estado, estudianteId, asignaturaId } = req.body;
     let contenido = {
         tipo: 0,
         datos: [],
@@ -83,15 +83,15 @@ exports.guardar = async (req, res) => {
 
         // Crear nueva asistencia
         const nuevaAsistencia = await ModeloAsistencia.create({
-            estudianteId: estudiante.id,
-            asignaturaId: asignatura.id,
             fecha,
-            estado
+            estado,
+            estudianteId,
+            asignaturaId
         });
 
         contenido.tipo = 1;
         contenido.datos = {
-            id_asistencia: nuevaAsistencia.id,
+            id: nuevaAsistencia.id,
             nombre_estudiante: `${estudiante.primerNombre} ${estudiante.primerApellido}`,
             nombre_asignatura: asignatura.nombre_asignatura,
             fecha: nuevaAsistencia.fecha,

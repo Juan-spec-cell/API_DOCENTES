@@ -3,7 +3,8 @@ const { body, query } = require('express-validator');
 const controladorEstudiante = require('../controladores/controladorEstudiante');
 const rutas = express.Router();
 const ModeloCarrera = require('../modelos/carrera');
-const ModeloEstudiante = require('../modelos/estudiante');
+const ModeloEstudiante = require('../modelos/Estudiante');
+
 /**
  * @swagger
  * tags:
@@ -153,7 +154,15 @@ rutas.post(
         .isString().withMessage('La contraseña debe ser una cadena de texto')
         .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
         .notEmpty().withMessage('La contraseña no puede estar vacía'),
-    body("carreraId").isInt({ min: 1 }).withMessage('El carreraId debe ser un número entero positivo'),
+    body("carreraId").isInt({ min: 1 }).withMessage('El carreraId debe ser un número entero positivo')
+    .custom(async (value) => {
+        if (value) {
+            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id: value }});
+            if (!buscarEstudiante){
+                throw new Error('El id de la carrera no eciste')
+            }
+        }
+    }),
     controladorEstudiante.guardar
 );
 

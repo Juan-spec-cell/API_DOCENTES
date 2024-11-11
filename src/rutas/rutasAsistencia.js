@@ -2,6 +2,8 @@ const { Router } = require('express');
 const { body, query } = require('express-validator');
 const controladorAsistencia = require('../controladores/controladorAsistencia');
 const ModeloAsistencia = require('../modelos/asistencia'); // Asegúrate de importar ModeloAsistencia
+const ModeloEstudiante = require('../modelos/estudiante');
+const ModeloAsignatura = require('../modelos/asignatura');
 const rutas = Router();
 
 /**
@@ -98,6 +100,12 @@ rutas.get('/listar', controladorAsistencia.listar);
  *                 type: string
  *                 enum: [Presente, Ausente, Tardanza]
  *                 description: Estado de la asistencia.
+ *               estudianteId:
+ *                 type: integer
+ *                 description: ID del estudiante.
+ *               asignaturaId:
+ *                 type: integer
+ *                 description: ID de la asignatura.
  *     responses:
  *       200:
  *         description: Asistencia guardada correctamente.
@@ -128,6 +136,12 @@ rutas.get('/listar', controladorAsistencia.listar);
  *                       type: string
  *                       enum: [Presente, Ausente, Tardanza]
  *                       description: Estado de la asistencia.
+ *                     estudianteId:
+ *                       type: integer
+ *                       description: ID del estudiante.
+ *                     asignaturaId:
+ *                       type: integer
+ *                       description: ID de la asignatura.
  *                 msj:
  *                   type: string
  *       400:
@@ -135,6 +149,7 @@ rutas.get('/listar', controladorAsistencia.listar);
  *       500:
  *         description: Error en el servidor al guardar la asistencia.
  */
+
 rutas.post('/guardar',
     body("nombre_estudiante")
         .isString().withMessage('El nombre del estudiante debe ser una cadena de texto')
@@ -149,6 +164,24 @@ rutas.post('/guardar',
         .isDate().withMessage('La fecha debe ser una fecha válida'),
     body("estado")
         .isIn(['Presente', 'Ausente', 'Tardanza']).withMessage('El estado debe ser Presente, Ausente o Tardanza'),
+    body('estudianteId').isInt().withMessage('El id del estudiante debe de ser entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id: value } });
+                if (!buscarEstudiante) {
+                    throw new Error('El id de la del estudiante no existe')
+                }
+            }
+        }),
+    body('asignaturaId').isInt().withMessage('El id de la asignatura debe de ser entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarAsignatura = await ModeloAsignatura.findOne({ where: { id: value } });
+                if (!buscarAsignatura) {
+                    throw new Error('El id de la de la asignatura no existe')
+                }
+            }
+        }),
     controladorAsistencia.guardar
 );
 
