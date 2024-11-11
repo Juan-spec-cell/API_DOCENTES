@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const db = require('../configuracion/db');
-const estudiante = require('./estudiante');
+const estudiante = require('./Estudiante');
 const periodo = require('./periodo');
 
 const matricula = db.define(

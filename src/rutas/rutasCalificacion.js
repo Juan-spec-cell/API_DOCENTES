@@ -2,6 +2,7 @@ const { Router } = require('express');
 const { body, query } = require('express-validator');
 const controladorCalificacion = require('../controladores/controladorCalificacion');
 const ModeloCalificacion = require('../modelos/calificacion');
+const ModeloActividad = require('../modelos/actividad');
 const rutas = Router();
 
 /**
@@ -57,6 +58,9 @@ rutas.get('/', controladorCalificacion.inicio);
  *                       nota:
  *                         type: number
  *                         description: Nota del estudiante.
+ *                       actividadId:
+ *                         type: integer
+ *                         description: ID de la actividad.
  *                 msj:
  *                   type: array
  *                   items:
@@ -91,6 +95,9 @@ rutas.get('/listar', controladorCalificacion.listar);
  *               nota:
  *                 type: number
  *                 description: Nota del estudiante.
+ *               actividadId:
+ *                 type: integer
+ *                 description: ID de la actividad.
  *     responses:
  *       200:
  *         description: Calificación guardada correctamente.
@@ -116,6 +123,9 @@ rutas.get('/listar', controladorCalificacion.listar);
  *                     nota:
  *                       type: number
  *                       description: Nota del estudiante.
+ *                     actividadId:
+ *                       type: integer
+ *                       description: ID de la actividad.
  *                 msj:
  *                   type: string
  *       400:
@@ -139,9 +149,16 @@ rutas.post('/guardar',
                 throw new Error('La nota debe ser un número');
             }
             return true;
-        })
-        .notEmpty().withMessage('Ingrese una nota para el estudiante')
-        .toFloat(), // Convertir a float
+        }),
+    body('actividadId').isInt().withMessage('El ID de la actividad debe ser un entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarActividad = await ModeloActividad.findOne({ where: { id: value } });
+                if (!buscarActividad) {
+                    throw new Error('El id de la actividad no existe')
+                }
+            }
+        }),
     controladorCalificacion.guardar
 );
 
@@ -177,6 +194,9 @@ rutas.post('/guardar',
  *               nota:
  *                 type: number
  *                 description: Nota del estudiante.
+ *               actividadId:
+ *                 type: integer
+ *                 description: ID de la actividad.
  *     responses:
  *       200:
  *         description: Calificación editada correctamente.
@@ -193,6 +213,9 @@ rutas.post('/guardar',
  *                   type: string
  *                 nota:
  *                   type: number
+ *                 actividadId:
+ *                   type: integer
+ *                   description: ID de la actividad.
  *       400:
  *         description: Error en la validación de datos.
  *       404:
@@ -227,6 +250,15 @@ rutas.put('/editar',
         })
         .notEmpty().withMessage('La nota es obligatoria')
         .toFloat(), // Convertir a float
+    body('actividadId').isInt().withMessage('El ID de la actividad debe ser un entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarActividad = await ModeloActividad.findOne({ where: { id: value } });
+                if (!buscarActividad) {
+                    throw new Error('El id de la actividad no existe')
+                }
+            }
+        }),
     controladorCalificacion.editar
 );
 

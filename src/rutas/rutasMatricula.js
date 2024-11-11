@@ -2,7 +2,9 @@ const express = require('express');
 const { body, query } = require('express-validator');
 const controladorMatricula = require('../controladores/controladorMatricula');
 const rutas = express.Router();
-
+const ModeloEstudiante = require('../modelos/Estudiante');
+const ModeloPeriodo = require('../modelos/periodo');
+const ModeloMatricula = require('../modelos/matricula');
 /**
  * @swagger
  * tags:
@@ -78,15 +80,12 @@ rutas.get('/listar', controladorMatricula.listar);
  *           schema:
  *             type: object
  *             properties:
- *               nombre_estudiante:
- *                 type: string
- *                 description: Nombre del estudiante.
- *               apellido_estudiante:
- *                 type: string
- *                 description: Apellido del estudiante.
- *               nombre_periodo:
- *                 type: string
- *                 description: Nombre del periodo.
+ *                estudianteId:
+ *                    type: integer
+ *                    description: Id del estudiante.
+ *                periodoId:
+ *                     type: integer
+ *                     description: Id del periodo.
  *     responses:
  *       201:
  *         description: Matrícula guardada correctamente.
@@ -100,15 +99,15 @@ rutas.get('/listar', controladorMatricula.listar);
  *                 datos:
  *                   type: object
  *                   properties:
- *                     id_matricula:
+ *                     id:
  *                       type: integer
  *                       description: ID de la matrícula.
- *                     nombre_estudiante:
- *                       type: string
- *                       description: Nombre del estudiante.
- *                     nombre_periodo:
- *                       type: string
- *                       description: Nombre del periodo.
+ *                     estudianteId:
+ *                       type: integer
+ *                       description: Id del estudiante.
+ *                     periodoId:
+ *                       type: integer
+ *                       description: Id del periodo.
  *                 msj:
  *                   type: string
  *       400:
@@ -117,9 +116,24 @@ rutas.get('/listar', controladorMatricula.listar);
  *         description: Error en el servidor al guardar la matrícula.
  */
 rutas.post('/guardar',
-    body('nombre_estudiante').notEmpty().withMessage('El nombre del estudiante es obligatorio'),
-    body('apellido_estudiante').notEmpty().withMessage('El apellido del estudiante es obligatorio'),
-    body('nombre_periodo').notEmpty().withMessage('El nombre del periodo es obligatorio'),
+    body('estudianteId').isInt().withMessage('El id debe de ser un numero entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id: value } });
+                if (!buscarEstudiante) {
+                    throw new Error('El id del estudiante no existe')
+                }
+            }
+        }),
+    body('periodoId').isInt().withMessage('El id debe de ser un numero entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarPeriodo = await ModeloPeriodo.findOne({ where: { id: value } });
+                if (!buscarPeriodo) {
+                    throw new Error('El id del periodo no existe')
+                }
+            }
+        }),
     controladorMatricula.guardar
 );
 
@@ -143,14 +157,11 @@ rutas.post('/guardar',
  *           schema:
  *             type: object
  *             properties:
- *               nombre_estudiante:
- *                 type: string
+ *               estudianteId:
+ *                 type: integer
  *                 description: Nombre del estudiante.
- *               apellido_estudiante:
- *                 type: string
- *                 description: Apellido del estudiante.
- *               nombre_periodo:
- *                 type: string
+ *               periodoId:
+ *                 type: integer
  *                 description: Nombre del periodo.
  *     responses:
  *       200:
@@ -172,10 +183,33 @@ rutas.post('/guardar',
  *         description: Error en el servidor al editar la matrícula.
  */
 rutas.put('/editar',
-    query("id").isInt().withMessage("El id de la matrícula debe ser un entero"),
-    body('nombre_estudiante').notEmpty().withMessage('El nombre del estudiante es obligatorio'),
-    body('apellido_estudiante').notEmpty().withMessage('El apellido del estudiante es obligatorio'),
-    body('nombre_periodo').notEmpty().withMessage('El nombre del periodo es obligatorio'),
+    query("id").isInt().withMessage("El id de la matrícula debe ser un entero")
+        .custom(async (value) => {
+            if (value) {
+                const buscarMatricula = await ModeloMatricula.findOne({ where: { id: value } });
+                if (!buscarMatricula) {
+                    throw new Error('El id de la matricula no existe')
+                }
+            }
+        }),
+    body('estudianteId').isInt().withMessage('El id debe de ser un numero entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id: value } });
+                if (!buscarEstudiante) {
+                    throw new Error('El id del estudiante no existe')
+                }
+            }
+        }),
+    body('periodoId').isInt().withMessage('El id debe de ser un numero entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarPeriodo = await ModeloPeriodo.findOne({ where: { id: value } });
+                if (!buscarPeriodo) {
+                    throw new Error('El id del periodo no existe')
+                }
+            }
+        }),
     controladorMatricula.editar
 );
 

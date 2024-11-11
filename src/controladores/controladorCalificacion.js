@@ -1,6 +1,7 @@
 const ModeloCalificacion = require('../modelos/calificacion');
-const ModeloEstudiante = require('../modelos/Estudiante');
+const ModeloEstudiante = require('../modelos/estudiante');
 const ModeloAsignatura = require('../modelos/asignatura');
+const ModeloActividad = require('../modelos/actividad');
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
 const moment = require('moment'); // Importa la biblioteca moment
@@ -26,6 +27,10 @@ exports.listar = async (req, res) => {
                 {
                     model: ModeloAsignatura,
                     attributes: ['nombre_asignatura']
+                },
+                {
+                    model: ModeloActividad,
+                    attributes: ['nombre_actividad']
                 }
             ]
         });
@@ -38,6 +43,7 @@ exports.listar = async (req, res) => {
                 apellido_estudiante: calificacion.Estudiante ? `${calificacion.Estudiante.primerApellido} ${calificacion.Estudiante.segundoApellido || ''}`.trim() : null,
                 nombre_asignatura: calificacion.Asignatura ? calificacion.Asignatura.nombre_asignatura : null,
                 nota: calificacion.nota,
+                nombre_actividad: calificacion.actividadId,
                 createdAt: calificacion.createdAt ? moment(calificacion.createdAt).format('DD/MM/YYYY') : null,
                 updatedAt: calificacion.updatedAt ? moment(calificacion.updatedAt).format('DD/MM/YYYY') : null
             })),
@@ -61,7 +67,7 @@ exports.guardar = async (req, res) => {
         res.json({ msj: "Hay errores en la petición", error: msjerror });
     } else {
         try {
-            const { nombre_estudiante, apellido_estudiante, nombre_asignatura, nota } = req.body;
+            const { nombre_estudiante, apellido_estudiante, nombre_asignatura, nota, actividadId } = req.body;
 
             // Buscar el estudiante por nombre y apellido
             const estudiante = await ModeloEstudiante.findOne({
@@ -74,7 +80,7 @@ exports.guardar = async (req, res) => {
                 console.log('Error: Estudiante no encontrado'); // Puedes poner el mensaje de error o el objeto 'estudiante' si lo necesitas
                 return res.status(404).json({ error: 'Estudiante no encontrado' });
             }
-            
+
 
             // Buscar la asignatura por nombre
             const asignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura } });
@@ -84,7 +90,8 @@ exports.guardar = async (req, res) => {
             const nuevaCalificacion = await ModeloCalificacion.create({
                 estudianteId: estudiante.id,
                 asignaturaId: asignatura.id,
-                nota
+                nota,
+                actividadId
             });
 
             res.json({
@@ -94,7 +101,8 @@ exports.guardar = async (req, res) => {
                     nombre_estudiante: `${estudiante.primerNombre} ${estudiante.segundoNombre || ''}`.trim(),
                     apellido_estudiante: `${estudiante.primerApellido} ${estudiante.segundoApellido || ''}`.trim(),
                     nombre_asignatura: asignatura.nombre_asignatura,
-                    nota: nuevaCalificacion.nota
+                    nota: nuevaCalificacion.nota,
+                    actividadId: nuevaCalificacion.actividadId,
                 },
                 msj: "Calificación guardada correctamente"
             });

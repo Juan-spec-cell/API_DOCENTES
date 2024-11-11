@@ -1,8 +1,9 @@
 const { Router } = require('express');
 const { body, query } = require('express-validator');
-const controladorAsignatura = require('../controladores/controladorAsignatura'); 
+const controladorAsignatura = require('../controladores/controladorAsignatura');
 const ModeloAsignatura = require('../modelos/asignatura');
-
+const ModeloDocente = require('../modelos/docente');
+const ModeloCarrera = require('../modelos/carrera');
 
 const rutas = Router();
 
@@ -84,6 +85,9 @@ rutas.get('/listar', controladorAsignatura.listar);
  *               docenteId:
  *                 type: integer
  *                 description: ID del docente.
+ *               carreraId:
+ *                 type: integer
+ *                 description: ID de la carrera.
  *     responses:
  *       200:
  *         description: Asignatura guardada correctamente.
@@ -106,20 +110,40 @@ rutas.get('/listar', controladorAsignatura.listar);
  *                     docenteId:
  *                       type: integer
  *                       description: ID del docente.
- *                 msj:
- *                   type: string
+ *                     carreraId:
+ *                       type: integer
+ *                       description: ID de la carrera.
  *       400:
  *         description: Error en la validación de datos.
  *       500:
  *         description: Error en el servidor al guardar la asignatura.
  */
+
 rutas.post('/guardar',
     body("nombre_asignatura")
         .isString().withMessage('El nombre de la asignatura debe ser una cadena de texto')
         .notEmpty().withMessage('El nombre de la asignatura no puede estar vacío'),
     body("docenteId")
         .isInt().withMessage('El ID del docente debe ser un entero')
-        .notEmpty().withMessage('El ID del docente no puede estar vacío'),
+        .notEmpty().withMessage('El ID del docente no puede estar vacío')
+        .custom(async (value) => {
+            if (value) {
+                const buscarDocente = await ModeloDocente.findOne({ where: { id: value } });
+                if (!buscarDocente) {
+                    throw new Error('El id del docente no existe')
+                }
+            }
+        }),
+    body("carreraId")
+        .isInt().withMessage('El ID de la carrera debe ser un entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarCarrera = await ModeloCarrera.findOne({ where: { id: value } });
+                if (!buscarCarrera) {
+                    throw new Error('El id de la carrera no existe')
+                }
+            }
+        }),
     controladorAsignatura.guardar
 );
 
@@ -149,6 +173,9 @@ rutas.post('/guardar',
  *               docenteId:
  *                 type: integer
  *                 description: ID del docente.
+ *               carreraId:
+ *                 type: integer
+ *                 description: ID del carrera.
  *     responses:
  *       200:
  *         description: Asignatura editada correctamente.
@@ -162,6 +189,8 @@ rutas.post('/guardar',
  *                 nombre_asignatura:
  *                   type: string
  *                 docenteId:
+ *                   type: integer
+ *                 carreraId:
  *                   type: integer
  *       400:
  *         description: Error en la validación de datos.
@@ -183,8 +212,25 @@ rutas.put('/editar',
         .optional()
         .isString().withMessage('El nombre de la asignatura debe ser una cadena de texto'),
     body("docenteId")
-        .optional()
-        .isInt().withMessage('El ID del docente debe ser un entero'),
+        .isInt().withMessage('El ID del docente debe ser un entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarDocente = await ModeloDocente.findOne({ where: { id: value } });
+                if (!buscarDocente) {
+                    throw new Error('El id del docente no existe')
+                }
+            }
+        }),
+    body("carreraId")
+        .isInt().withMessage('El ID de la arrera debe ser un entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarCarrera = await ModeloCarrera.findOne({ where: { id: value } });
+                if (!buscarCarrera) {
+                    throw new Error('El id de la carrera no existe')
+                }
+            }
+        }),
     controladorAsignatura.editar
 );
 

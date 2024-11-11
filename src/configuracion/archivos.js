@@ -7,7 +7,7 @@ const resizeImage = async (file) => {
     const maxSize = 1 * 1024 * 1024; // 1MB
     if (size > maxSize) {
         const resizedBuffer = await sharp(buffer).resize({width: 800})
-              .toBuffer(); 
+            .toBuffer(); 
         return resizedBuffer;
     }
     return buffer;
@@ -80,7 +80,7 @@ exports.uploadImagenDocente = multer({
     },
 }).single("imagen"); 
 
-exports.uploadImagenEstudiantes = multer({
+exports.uploadImagenEstudiante = multer({
     storage: diskStorageEstudiantes,
     fileFilter: (req, file, cb)=>{
             if(file.mimetype == "image/png" || file.mimetype == "image/jpeg" || file.mimetype == "image/jpg"){

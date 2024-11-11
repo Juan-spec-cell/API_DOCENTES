@@ -1,5 +1,6 @@
 const ModeloAsignatura = require('../modelos/asignatura');
-const ModeloDocente = require('../modelos/Docente');
+const ModeloDocente = require('../modelos/docente');
+const ModeloCarrera = require('../modelos/carrera');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
@@ -45,7 +46,7 @@ exports.listar = async (req, res) => {
 };
 
 exports.guardar = async (req, res) => {
-    const { nombre_asignatura, docenteId } = req.body;
+    const { nombre_asignatura, docenteId, carreraId } = req.body;
     let contenido = {
         tipo: 0,
         datos: [],
@@ -56,7 +57,7 @@ exports.guardar = async (req, res) => {
         return enviar(200, contenido, res);
     }
     try {
-        const data = await ModeloAsignatura.create({ nombre_asignatura, docenteId });
+        const data = await ModeloAsignatura.create({ nombre_asignatura, docenteId, carreraId });
         contenido.tipo = 1;
         contenido.datos = data;
         contenido.msj = "Asignatura guardada correctamente";
@@ -80,12 +81,6 @@ exports.editar = async (req, res) => {
         return enviar(200, contenido, res);
     }
     try {
-        const asignaturaExistente = await ModeloAsignatura.findOne({ where: { id } });
-        if (!asignaturaExistente) {
-            contenido.msj = "La asignatura no existe";
-            return enviar(404, contenido, res);
-        }
-
         await ModeloAsignatura.update(req.body, { where: { id } });
         contenido.tipo = 1;
         contenido.msj = "Asignatura editada correctamente";

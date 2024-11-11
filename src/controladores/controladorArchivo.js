@@ -6,7 +6,7 @@ const {uploadImagenEstudiante} = require("../configuracion/archivos");
 const Docente = require("../modelos/Docente"); 
 const Estudiante = require("../modelos/Estudiante");
 const {validationResult} = require("express-validator");
-const {resizeImagen} = require("../utilidades/resizeImagen"); 
+const {resizeImagen} = require("../configuracion/archivos"); 
 
 exports.validarImagenDocente = (req,res,next) => {
     const errors = validationResult(req);
@@ -17,6 +17,7 @@ exports.validarImagenDocente = (req,res,next) => {
         uploadImagenDocente(req,res, (err)=> {
             if (err instanceof multer.MulterError){
                 res.status(400).json({msj: "Error al cargar la imagen", error: err});
+                console.log(err);
             }
             else if(err){
                 res.status(400).json({msj: "Error al cargar la imagen", error: err});
@@ -63,17 +64,17 @@ exports.actualizarImagenDocente = async (req,res) => {
             return res.status(400).json({msj: "No se pudo enviar la imagen"});
         }
         const nombreImagen = req.file.filename;
-        var buscarDocente = await ClientRequest.finOne({where: {id: id}});
+        var buscarDocente = await Docente.findOne({where: {id: id}});
         if (!buscarDocente){
             res.json({msj: "El id del docente no existe"});
         }
         else {
-            const imagenAnterior = fs.existsSync(path.join(__dirname, "../../../public/img/docentes/" + buscarDocente.imagen));
+            const imagenAnterior = fs.existsSync(path.join(__dirname, "../../public/img/docentes/" + buscarDocente.imagen));
             if(imagenAnterior){
-                fs.unlinkSync(path.join(__dirname, "../../../public/img/docentes/" + buscarDocente.imagen));
+                fs.unlinkSync(path.join(__dirname, "../../public/img/docentes/" + buscarDocente.imagen));
                 console.log("Imagen eliminada");
             }
-            const imagenNueva = fs.existsSync(path.join(__dirname, "../../../public/img/docentes/"+ nombreImagen));
+            const imagenNueva = fs.existsSync(path.join(__dirname, "../../public/img/docentes/"+ nombreImagen));
             if (imagenNueva){
                 buscarDocente.imagen = nombreImagen;
                 buscarDocente.save().
@@ -108,17 +109,17 @@ exports.actualizarImagenEstudiante = async (req,res) => {
             return res.status(400).json({msj: "No se pudo enviar la imagen"});
         }
         const nombreImagen = req.file.filename;
-        var buscarEstudiante = await ClientRequest.finOne({where: {id: id}});
+        var buscarEstudiante = await Estudiante.findOne({where: {id: id}});
         if (!buscarEstudiante){
             res.json({msj: "El id del estudiante no existe"});
         }
         else {
-            const imagenAnterior = fs.existsSync(path.join(__dirname, "../../../public/img/estudiantes/" + buscarEstudiante.imagen));
+            const imagenAnterior = fs.existsSync(path.join(__dirname, "../../public/img/estudiantes/" + buscarEstudiante.imagen));
             if(imagenAnterior){
-                fs.unlinkSync(path.join(__dirname, "../../../public/img/estudiantes/" + buscarEstudiante.imagen));
+                fs.unlinkSync(path.join(__dirname, "../../public/img/estudiantes/" + buscarEstudiante.imagen));
                 console.log("Imagen eliminada");
             }
-            const imagenNueva = fs.existsSync(path.join(__dirname, "../../../public/img/estudiantes/"+ nombreImagen));
+            const imagenNueva = fs.existsSync(path.join(__dirname, "../../public/img/estudiantes/"+ nombreImagen));
             if (imagenNueva){
                 buscarEstudiante.imagen = nombreImagen;
                 buscarEstudiante.save().

@@ -49,7 +49,6 @@ exports.listar = async (req, res) => {
 };
 
 exports.guardar = async (req, res) => {
-    const { nombre_estudiante, apellido_estudiante, nombre_periodo } = req.body;
     let contenido = {
         tipo: 0,
         datos: [],
@@ -60,29 +59,11 @@ exports.guardar = async (req, res) => {
         return enviar(200, contenido, res);
     }
     try {
-        // Buscar el estudiante
-        const estudiante = await ModeloEstudiante.findOne({
-            where: {
-                primerNombre: nombre_estudiante.split(' ')[0],
-                primerApellido: apellido_estudiante.split(' ')[0]
-            }
-        });
-        if (!estudiante) {
-            contenido.msj = "Estudiante no encontrado";
-            return enviar(404, contenido, res);
-        }
-
-        // Buscar el periodo
-        const periodo = await ModeloPeriodo.findOne({ where: { nombre_periodo } });
-        if (!periodo) {
-            contenido.msj = "Periodo no encontrado";
-            return enviar(404, contenido, res);
-        }
+        const { estudianteId, periodoId } = req.body;
 
         // Crear nueva matrícula
         const nuevaMatricula = await ModeloMatricula.create({
-            estudianteId: estudiante.id,
-            periodoId: periodo.id
+            estudianteId, periodoId
         });
 
         contenido.tipo = 1;
@@ -97,56 +78,36 @@ exports.guardar = async (req, res) => {
 };
 
 exports.editar = async (req, res) => {
-  const { id } = req.query;
-  let contenido = {
-      tipo: 0,
-      datos: [],
-      msj: [],
-  };
-  contenido.msj = errores(validationResult(req));
-  if (contenido.msj.length > 0) {
-      return enviar(200, contenido, res);
-  }
-  try {
-      const matriculaExistente = await ModeloMatricula.findOne({ where: { id } });
-      if (!matriculaExistente) {
-          contenido.msj = "La matrícula no existe";
-          return enviar(404, contenido, res);
-      }
+    const { id } = req.query;
+    let contenido = {
+        tipo: 0,
+        datos: [],
+        msj: [],
+    }; const { estudianteId, periodoId } = req.body;
+    contenido.msj = errores(validationResult(req));
+    if (contenido.msj.length > 0) {
+        return enviar(200, contenido, res);
+    }
+    try {
+        const { estudianteId, periodoId } = req.body;
+        const matriculaExistente = await ModeloMatricula.findOne({ where: { id } });
+        if (!matriculaExistente) {
+            contenido.msj = "La matrícula no existe";
+            return enviar(404, contenido, res);
+        }
+        // Actualizar la matrícula
+        await ModeloMatricula.update({
+            estudianteId, periodoId
+        }, { where: { id } });
 
-      // Buscar el estudiante
-      const estudiante = await ModeloEstudiante.findOne({
-          where: {
-              primerNombre: req.body.nombre_estudiante.split(' ')[0],
-              primerApellido: req.body.apellido_estudiante.split(' ')[0]
-          }
-      });
-      if (!estudiante) {
-          contenido.msj = "Estudiante no encontrado";
-          return enviar(404, contenido, res);
-      }
-
-      // Buscar el periodo
-      const periodo = await ModeloPeriodo.findOne({ where: { nombre_periodo: req.body.nombre_periodo } });
-      if (!periodo) {
-          contenido.msj = "Periodo no encontrado";
-          return enviar(404, contenido, res);
-      }
-
-      // Actualizar la matrícula
-      await ModeloMatricula.update({
-          estudianteId: estudiante.id,
-          periodoId: periodo.id
-      }, { where: { id } });
-
-      contenido.tipo = 1;
-      contenido.msj = "Matrícula editada correctamente";
-      enviar(200, contenido, res);
-  } catch (error) {
-      contenido.tipo = 0;
-      contenido.msj = "Error en el servidor al editar la matrícula";
-      enviar(500, contenido, res);
-  }
+        contenido.tipo = 1;
+        contenido.msj = "Matrícula editada correctamente";
+        enviar(200, contenido, res);
+    } catch (error) {
+        contenido.tipo = 0;
+        contenido.msj = "Error en el servidor al editar la matrícula";
+        enviar(500, contenido, res);
+    }
 };
 
 exports.eliminar = async (req, res) => {
