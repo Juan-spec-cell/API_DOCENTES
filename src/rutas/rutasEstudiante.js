@@ -158,8 +158,8 @@ rutas.post(
     .custom(async (value) => {
         if (value) {
             const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id: value }});
-            if (!buscarEstudiante){
-                throw new Error('El id de la carrera no eciste')
+            if (buscarEstudiante){
+                throw new Error('El id de la carrera no existe')
             }
         }
     }),
