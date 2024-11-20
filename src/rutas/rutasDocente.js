@@ -110,7 +110,7 @@ rutas.get('/listar', controladorDocente.listar);
  *       400:
  *         description: Error en los datos proporcionados
  */
-rutas.post('/guardar',
+rutas.post('/guardar', /*lo amoooo*/
     body('primerNombre').notEmpty().withMessage('El primer nombre es obligatorio')
         .isLength({ min: 3, max: 50 }).withMessage('La cantidad de caracteres permitida es de 3 - 50'),
     body('segundoNombre').optional().isLength({ max: 50 }).withMessage('El segundo nombre no puede exceder los 50 caracteres'),
