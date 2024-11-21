@@ -4,7 +4,9 @@ const controladorMatricula = require('../controladores/controladorMatricula');
 const rutas = express.Router();
 const ModeloEstudiante = require('../modelos/Estudiante');
 const ModeloPeriodo = require('../modelos/periodo');
+const ModeloAsignatura = require('../modelos/asignatura');
 const ModeloMatricula = require('../modelos/matricula');
+
 /**
  * @swagger
  * tags:
@@ -46,7 +48,7 @@ rutas.get('/', controladorMatricula.inicio);
  *                   items:
  *                     type: object
  *                     properties:
- *                       id_matricula:
+ *                       id:
  *                         type: integer
  *                         description: ID de la matrícula.
  *                       primerNombre:
@@ -55,9 +57,23 @@ rutas.get('/', controladorMatricula.inicio);
  *                       primerApellido:
  *                         type: string
  *                         description: Primer apellido del estudiante.
+ *                       email:
+ *                         type: string
+ *                         description: Email del estudiante.
  *                       nombre_periodo:
  *                         type: string
  *                         description: Nombre del periodo.
+ *                       asignaturas:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               description: ID de la asignatura.
+ *                             nombre_asignatura:
+ *                               type: string
+ *                               description: Nombre de la asignatura.
  *                 msj:
  *                   type: array
  *                   items:
@@ -86,6 +102,11 @@ rutas.get('/listar', controladorMatricula.listar);
  *                periodoId:
  *                     type: integer
  *                     description: Id del periodo.
+ *                asignaturas:
+ *                     type: array
+ *                     items:
+ *                       type: integer
+ *                     description: Arreglo de ids de las asignaturas.
  *     responses:
  *       201:
  *         description: Matrícula guardada correctamente.
@@ -102,12 +123,26 @@ rutas.get('/listar', controladorMatricula.listar);
  *                     id:
  *                       type: integer
  *                       description: ID de la matrícula.
- *                     estudianteId:
- *                       type: integer
- *                       description: Id del estudiante.
- *                     periodoId:
- *                       type: integer
- *                       description: Id del periodo.
+ *                     primerNombre:
+ *                       type: string
+ *                       description: Primer nombre del estudiante.
+ *                     primerApellido:
+ *                       type: string
+ *                       description: Primer apellido del estudiante.
+ *                     email:
+ *                       type: string
+ *                       description: Email del estudiante.
+ *                     asignaturas:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             description: ID de la asignatura.
+ *                           nombre_asignatura:
+ *                             type: string
+ *                             description: Nombre de la asignatura.
  *                 msj:
  *                   type: string
  *       400:
@@ -121,7 +156,7 @@ rutas.post('/guardar',
             if (value) {
                 const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id: value } });
                 if (!buscarEstudiante) {
-                    throw new Error('El id del estudiante no existe')
+                    throw new Error('El id del estudiante no existe');
                 }
             }
         }),
@@ -130,7 +165,18 @@ rutas.post('/guardar',
             if (value) {
                 const buscarPeriodo = await ModeloPeriodo.findOne({ where: { id: value } });
                 if (!buscarPeriodo) {
-                    throw new Error('El id del periodo no existe')
+                    throw new Error('El id del periodo no existe');
+                }
+            }
+        }),
+    body('asignaturas').isArray().withMessage('Las asignaturas deben ser un arreglo de ids')
+        .custom(async (value) => {
+            if (value) {
+                for (const asignaturaId of value) {
+                    const buscarAsignatura = await ModeloAsignatura.findOne({ where: { id: asignaturaId } });
+                    if (!buscarAsignatura) {
+                        throw new Error(`El id de la asignatura ${asignaturaId} no existe`);
+                    }
                 }
             }
         }),
@@ -163,6 +209,9 @@ rutas.post('/guardar',
  *               periodoId:
  *                 type: integer
  *                 description: Nombre del periodo.
+ *               asignaturaId:
+ *                 type: integer
+ *                 description: Nombre de la asignatura.
  *     responses:
  *       200:
  *         description: Matrícula editada correctamente.
@@ -207,6 +256,15 @@ rutas.put('/editar',
                 const buscarPeriodo = await ModeloPeriodo.findOne({ where: { id: value } });
                 if (!buscarPeriodo) {
                     throw new Error('El id del periodo no existe')
+                }
+            }
+        }),
+    body('asignaturaId').isInt().withMessage('El id debe de ser un numero entero')
+        .custom(async (value) => {
+            if (value) {
+                const buscarAsignatura = await ModeloAsignatura.findOne({ where: { id: value } });
+                if (!buscarAsignatura) {
+                    throw new Error('El id de la asignatura no existe')
                 }
             }
         }),
@@ -278,6 +336,9 @@ rutas.delete('/eliminar',
  *                 nombre_periodo:
  *                   type: string
  *                   description: Nombre del periodo.
+ *                 nombre_asignatura:
+ *                   type: string
+ *                   description: Nombre de la asignatura.
  *                 createdAt:
  *                   type: string
  *                   format: date-time
@@ -296,52 +357,5 @@ rutas.get('/buscar',
     controladorMatricula.buscarPorId
 );
 
-/**
- * @swagger
- * /matriculas/busqueda_nombre:
- *   get:
- *     summary: Busca una matrícula por nombre de estudiante
- *     tags: [Matrículas]
- *     parameters:
- *       - in: query
- *         name: nombre
- *         required: true
- *         schema:
- *           type: string
- *         description: Nombre del estudiante a buscar.
- *     responses:
- *       200:
- *         description: Matrícula encontrada.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: integer
- *                   description: ID de la matrícula.
- *                 nombre_estudiante:
- *                   type: string
- *                   description: Nombre del estudiante.
- *                 nombre_periodo:
- *                   type: string
- *                   description: Nombre del periodo.
- *                 createdAt:
- *                   type: string
- *                   format: date-time
- *                   description: Fecha de creación.
- *                 updatedAt:
- *                   type: string
- *                   format: date-time
- *                   description: Fecha de actualización.
- *       404:
- *         description: Matrícula no encontrada.
- *       500:
- *         description: Error al buscar la matrícula.
- */
-rutas.get('/busqueda_nombre',
-    query("nombre").isString().withMessage("El nombre del estudiante debe ser una cadena de texto"),
-    controladorMatricula.busqueda_nombre
-);
 
 module.exports = rutas;

@@ -2,7 +2,6 @@ const express = require('express');
 const { body, query } = require('express-validator');
 const controladorEstudiante = require('../controladores/controladorEstudiante');
 const rutas = express.Router();
-const ModeloCarrera = require('../modelos/carrera');
 const ModeloEstudiante = require('../modelos/Estudiante');
 
 /**

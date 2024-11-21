@@ -37,10 +37,10 @@ async function sincronizarModelos() {
         await modelos.Usuarios.sync();
         await modelos.Docente.sync();
         await modelos.Carrera.sync();
+        await modelos.Asignatura.sync(); // Asegúrate de que Asignatura se sincronice antes que Estudiante
         await modelos.Estudiante.sync();
         await modelos.Periodo.sync();
         await modelos.Matricula.sync();
-        await modelos.Asignatura.sync();
         await modelos.Actividad.sync();
         await modelos.Asistencia.sync();
         await modelos.Calificacion.sync();
