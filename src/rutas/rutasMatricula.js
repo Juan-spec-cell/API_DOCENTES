@@ -87,7 +87,7 @@ rutas.get('/listar', controladorMatricula.listar);
  * @swagger
  * /matriculas/guardar:
  *   post:
- *     summary: Guarda una nueva Matrícula
+ *     summary: Guarda nuevas matrículas para un estudiante
  *     tags: [Matrículas]
  *     requestBody:
  *       required: true
@@ -96,20 +96,20 @@ rutas.get('/listar', controladorMatricula.listar);
  *           schema:
  *             type: object
  *             properties:
- *                estudianteId:
- *                    type: integer
- *                    description: Id del estudiante.
- *                periodoId:
- *                     type: integer
- *                     description: Id del periodo.
- *                asignaturas:
- *                     type: array
- *                     items:
- *                       type: integer
- *                     description: Arreglo de ids de las asignaturas.
+ *               estudianteId:
+ *                 type: integer
+ *                 description: ID del estudiante.
+ *               periodoId:
+ *                 type: integer
+ *                 description: ID del periodo.
+ *               asignaturas:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: Arreglo de IDs de las asignaturas a matricular.
  *     responses:
- *       201:
- *         description: Matrícula guardada correctamente.
+ *       200:
+ *         description: Matrículas guardadas correctamente.
  *         content:
  *           application/json:
  *             schema:
@@ -117,71 +117,62 @@ rutas.get('/listar', controladorMatricula.listar);
  *               properties:
  *                 tipo:
  *                   type: integer
+ *                   description: "Indica el resultado de la operación (1: éxito, 0: error)."
  *                 datos:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                       description: ID de la matrícula.
- *                     primerNombre:
- *                       type: string
- *                       description: Primer nombre del estudiante.
- *                     primerApellido:
- *                       type: string
- *                       description: Primer apellido del estudiante.
- *                     email:
- *                       type: string
- *                       description: Email del estudiante.
- *                     asignaturas:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           id:
- *                             type: integer
- *                             description: ID de la asignatura.
- *                           nombre_asignatura:
- *                             type: string
- *                             description: Nombre de la asignatura.
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       estudianteId:
+ *                         type: integer
+ *                         description: ID del estudiante.
+ *                       periodoId:
+ *                         type: integer
+ *                         description: ID del periodo.
+ *                       asignaturaId:
+ *                         type: integer
+ *                         description: ID de la asignatura.
  *                 msj:
  *                   type: string
+ *                   description: Mensaje de la operación.
  *       400:
- *         description: Error en la validación de datos.
+ *         description: Error en la validación de los datos enviados.
+ *       404:
+ *         description: Estudiante, periodo o asignatura no encontrados.
  *       500:
- *         description: Error en el servidor al guardar la matrícula.
+ *         description: Error en el servidor al guardar las matrículas.
  */
-rutas.post('/guardar',
-    body('estudianteId').isInt().withMessage('El id debe de ser un numero entero')
+rutas.post(
+    '/guardar',
+    body('estudianteId').isInt().withMessage('El id del estudiante debe ser un entero')
         .custom(async (value) => {
-            if (value) {
-                const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id: value } });
-                if (!buscarEstudiante) {
-                    throw new Error('El id del estudiante no existe');
-                }
+            const estudiante = await ModeloEstudiante.findByPk(value);
+            if (!estudiante) {
+                throw new Error('El id del estudiante no existe');
             }
         }),
-    body('periodoId').isInt().withMessage('El id debe de ser un numero entero')
+    body('periodoId').isInt().withMessage('El id del periodo debe ser un entero')
         .custom(async (value) => {
-            if (value) {
-                const buscarPeriodo = await ModeloPeriodo.findOne({ where: { id: value } });
-                if (!buscarPeriodo) {
-                    throw new Error('El id del periodo no existe');
-                }
+            const periodo = await ModeloPeriodo.findByPk(value);
+            if (!periodo) {
+                throw new Error('El id del periodo no existe');
             }
         }),
-    body('asignaturas').isArray().withMessage('Las asignaturas deben ser un arreglo de ids')
-        .custom(async (value) => {
-            if (value) {
-                for (const asignaturaId of value) {
-                    const buscarAsignatura = await ModeloAsignatura.findOne({ where: { id: asignaturaId } });
-                    if (!buscarAsignatura) {
-                        throw new Error(`El id de la asignatura ${asignaturaId} no existe`);
-                    }
+    body('asignaturas').isArray({ min: 1 }).withMessage('El campo asignaturas debe ser un arreglo no vacío')
+        .custom(async (asignaturas) => {
+            for (const id of asignaturas) {
+                const asignatura = await ModeloAsignatura.findByPk(id);
+                if (!asignatura) {
+                    throw new Error(`La asignatura con id ${id} no existe`);
                 }
             }
         }),
     controladorMatricula.guardar
 );
+
+
+module.exports = rutas;
+
 
 /**
  * @swagger

@@ -67,96 +67,57 @@ exports.listar = async (req, res) => {
 };
 
 exports.guardar = async (req, res) => {
+    const { estudianteId, periodoId, asignaturas } = req.body;
     let contenido = {
         tipo: 0,
         datos: [],
         msj: [],
     };
+
+    // Validación
     contenido.msj = errores(validationResult(req));
     if (contenido.msj.length > 0) {
-        return enviar(200, contenido, res);
+        return enviar(400, contenido, res);
     }
+
     try {
-        const { estudianteId, periodoId, asignaturas } = req.body;
-
-        // Verificar si el estudiante ya está matriculado en el periodo
-        let matriculaExistente = await ModeloMatricula.findOne({
-            where: {
-                estudianteId,
-                periodoId
-            }
-        });
-
-        if (!matriculaExistente) {
-            // Crear nueva matrícula
-            matriculaExistente = await ModeloMatricula.create({
-                estudianteId,
-                periodoId
-            });
+        // Verificar existencia del estudiante
+        const estudiante = await ModeloEstudiante.findByPk(estudianteId);
+        if (!estudiante) {
+            return res.status(404).json({ error: 'Estudiante no encontrado' });
         }
 
-        // Agregar las nuevas asignaturas a la matrícula existente
-        for (const asignaturaId of asignaturas) {
-            const asignaturaExistente = await ModeloMatricula.findOne({
-                where: {
-                    estudianteId,
-                    periodoId,
-                    asignaturaId
-                }
-            });
-            if (!asignaturaExistente) {
-                await ModeloMatricula.create({
-                    estudianteId,
-                    periodoId,
-                    asignaturaId
-                });
-            }
+        // Verificar existencia del periodo
+        const periodo = await ModeloPeriodo.findByPk(periodoId);
+        if (!periodo) {
+            return res.status(404).json({ error: 'Periodo no encontrado' });
         }
 
-        // Obtener todas las asignaturas de la matrícula
-        const matriculasConAsignaturas = await ModeloMatricula.findAll({
-            where: {
+        // Crear las matrículas
+        if (asignaturas && Array.isArray(asignaturas)) {
+            const matriculasData = asignaturas.map((asignaturaId) => ({
                 estudianteId,
-                periodoId
-            },
-            include: [
-                {
-                    model: ModeloEstudiante,
-                    attributes: ['primerNombre', 'primerApellido', 'email']
-                },
-                {
-                    model: ModeloAsignatura,
-                    attributes: ['id', 'nombre_asignatura']
-                }
-            ]
-        });
+                periodoId,
+                asignaturaId,
+            }));
+            await ModeloMatricula.bulkCreate(matriculasData);
 
-        if (matriculasConAsignaturas.length > 0) {
             contenido.tipo = 1;
-            contenido.datos = {
-                id: matriculaExistente.id,
-                primerNombre: matriculasConAsignaturas[0].Estudiante.primerNombre,
-                primerApellido: matriculasConAsignaturas[0].Estudiante.primerApellido,
-                email: matriculasConAsignaturas[0].Estudiante.email,
-                asignaturas: matriculasConAsignaturas.map(matricula => ({
-                    id: matricula.Asignatura ? matricula.Asignatura.id : null,
-                    nombre_asignatura: matricula.Asignatura ? matricula.Asignatura.nombre_asignatura : null
-                }))
-            };
-            contenido.msj = "Matrícula guardada correctamente";
+            contenido.datos = matriculasData;
+            contenido.msj = "Matrículas guardadas correctamente.";
+            return enviar(200, contenido, res);
         } else {
-            contenido.tipo = 0;
-            contenido.msj = "No se encontraron asignaturas para la matrícula";
+            contenido.msj = "El campo asignaturas es inválido o no es un arreglo.";
+            return enviar(400, contenido, res);
         }
-
-        enviar(200, contenido, res);
     } catch (error) {
+        console.error(error);
         contenido.tipo = 0;
-        contenido.msj = "Error en el servidor al guardar la matrícula";
-        enviar(500, contenido, res);
-        console.log(error);
+        contenido.msj = "Error en el servidor al guardar las matrículas.";
+        return enviar(500, contenido, res);
     }
 };
+
 
 exports.editar = async (req, res) => {
     const { id } = req.query;
