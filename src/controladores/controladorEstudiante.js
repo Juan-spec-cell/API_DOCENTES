@@ -24,7 +24,7 @@ exports.listar = async (req, res) => {
       include: [
         {
           model: ModeloUsuario,
-          attributes: ['email'] // Solo incluir el email del usuario
+          attributes: ['id', 'email'] // Incluir el id_usuario y el email del usuario
         },
         {
           model: ModeloCarrera,
@@ -35,10 +35,11 @@ exports.listar = async (req, res) => {
 
     contenido.tipo = 1;
     contenido.datos = data.map(estudiante => ({
-      id_estudiante: estudiante.id, // Cambia 'id_estudiante' a 'id'
+      id_estudiante: estudiante.id,
       primerNombre: estudiante.primerNombre,
       primerApellido: estudiante.primerApellido,
-      email: estudiante.Usuario ? estudiante.Usuario.email : 'Email no asignado', // Asegurarse de acceder al email correctamente
+      email: estudiante.Usuario ? estudiante.Usuario.email : 'Email no asignado',
+      id_usuario: estudiante.Usuario ? estudiante.Usuario.id : null, // Agrega el id_usuario
       nombre_carrera: estudiante.Carrera ? estudiante.Carrera.nombre_carrera : 'Carrera no asignada'
     }));
     enviar(200, contenido, res);

@@ -58,6 +58,9 @@ rutas.get('/', controladorEstudiante.inicio);
  *                       email:
  *                         type: string
  *                         description: Email del estudiante.
+ *                       id_usuario:
+ *                         type: integer
+ *                         description: ID del usuario asociado.
  *                       nombre_carrera:
  *                         type: string
  *                         description: Nombre de la carrera.

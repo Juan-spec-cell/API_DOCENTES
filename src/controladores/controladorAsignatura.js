@@ -1,6 +1,7 @@
 const ModeloAsignatura = require('../modelos/asignatura');
 const ModeloDocente = require('../modelos/docente');
 const ModeloCarrera = require('../modelos/carrera');
+const ModeloUsuario = require('../modelos/usuario');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
@@ -21,6 +22,12 @@ exports.listar = async (req, res) => {
             include: [
                 {
                     model: ModeloDocente,
+                    include: [
+                        {
+                            model: ModeloUsuario, // Asegúrate de que este modelo esté definido y relacionado
+                            attributes: ['id'] // Incluye el id_usuario
+                        }
+                    ],
                     attributes: ['primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido'] // Incluye los campos necesarios
                 }
             ]
@@ -30,6 +37,7 @@ exports.listar = async (req, res) => {
         contenido.datos = data.map(asignatura => ({
             id: asignatura.id,
             nombre_asignatura: asignatura.nombre_asignatura,
+            id_usuario: asignatura.Docente && asignatura.Docente.Usuario ? asignatura.Docente.Usuario.id : null, // Agrega el id_usuario
             nombre_docente: asignatura.Docente ? `${asignatura.Docente.primerNombre} ${asignatura.Docente.segundoNombre || ''} ${asignatura.Docente.primerApellido} ${asignatura.Docente.segundoApellido || ''}`.trim() : null,
             fecha_creacion: moment(asignatura.createdAt).format('DD/MM/YYYY'), // Formatea la fecha de creación
             fecha_actualizacion: moment(asignatura.updatedAt).format('DD/MM/YYYY'), // Formatea la fecha de actualización

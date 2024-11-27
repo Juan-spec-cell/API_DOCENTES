@@ -54,9 +54,18 @@ rutas.get('/', controladorAsignatura.inicio);
  *                       nombre_asignatura:
  *                         type: string
  *                         description: Nombre de la asignatura.
+ *                       id_usuario:
+ *                         type: integer
+ *                         description: ID del usuario asociado al docente.
  *                       nombre_docente:
  *                         type: string
  *                         description: Nombre del docente.
+ *                       fecha_creacion:
+ *                         type: string
+ *                         description: Fecha de creación de la asignatura.
+ *                       fecha_actualizacion:
+ *                         type: string
+ *                         description: Fecha de actualización de la asignatura.
  *                 msj:
  *                   type: array
  *                   items:

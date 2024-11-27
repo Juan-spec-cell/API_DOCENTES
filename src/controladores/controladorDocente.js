@@ -1,4 +1,4 @@
-const ModeloDocente = require('../modelos/Docente');
+const ModeloDocente = require('../modelos/docente');
 const ModeloUsuario = require('../modelos/usuario');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
@@ -19,14 +19,22 @@ exports.listar = async (req, res) => {
         msj: [],
     };
     try {
-        const data = await ModeloDocente.findAll();
+        const data = await ModeloDocente.findAll({
+            include: [
+                {
+                    model: ModeloUsuario, // Asegúrate de que este modelo esté definido y relacionado
+                    attributes: ['id'] // Incluye el id_usuario
+                }
+            ]
+        });
 
         contenido.tipo = 1;
         contenido.datos = data.map(docente => ({
             id_docente: docente.id,
             primerNombre: docente.primerNombre,
             primerApellido: docente.primerApellido,
-            email: docente.email
+            email: docente.email,
+            id_usuario: docente.Usuario ? docente.Usuario.id : null // Agrega el id_usuario
         }));
         enviar(200, contenido, res);
     } catch (error) {
