@@ -3,6 +3,7 @@ const { body, query } = require('express-validator');
 const controladorEstudiante = require('../controladores/controladorEstudiante');
 const rutas = express.Router();
 const ModeloEstudiante = require('../modelos/Estudiante');
+const ModeloCarrera = require('../modelos/carrera');
 
 /**
  * @swagger
@@ -156,8 +157,8 @@ rutas.post(
     body("carreraId").isInt({ min: 1 }).withMessage('El carreraId debe ser un número entero positivo')
     .custom(async (value) => {
         if (value) {
-            const buscarEstudiante = await ModeloEstudiante.findOne({ where: { id: value }});
-            if (!buscarEstudiante){
+            const buscarCarrera = await ModeloCarrera.findOne({ where: { id: value }});
+            if (!buscarCarrera){
                 throw new Error('El id de la carrera no existe');
             }
         }
