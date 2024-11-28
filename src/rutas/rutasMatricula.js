@@ -60,6 +60,9 @@ rutas.get('/', controladorMatricula.inicio);
  *                       email:
  *                         type: string
  *                         description: Email del estudiante.
+ *                       id_usuario:
+ *                         type: integer
+ *                         description: ID del usuario asociado al estudiante.
  *                       nombre_periodo:
  *                         type: string
  *                         description: Nombre del periodo.

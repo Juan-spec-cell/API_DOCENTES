@@ -2,6 +2,7 @@ const ModeloMatricula = require('../modelos/matricula');
 const ModeloEstudiante = require('../modelos/Estudiante');
 const ModeloPeriodo = require('../modelos/periodo');
 const ModeloAsignatura = require('../modelos/asignatura');
+const ModeloUsuario = require('../modelos/usuario');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
@@ -22,6 +23,12 @@ exports.listar = async (req, res) => {
             include: [
                 {
                     model: ModeloEstudiante,
+                    include: [
+                        {
+                            model: ModeloUsuario, // Asegúrate de que este modelo esté definido y relacionado
+                            attributes: ['id'] // Incluye el id_usuario
+                        }
+                    ],
                     attributes: ['primerNombre', 'primerApellido', 'email']
                 },
                 {
@@ -45,6 +52,7 @@ exports.listar = async (req, res) => {
                     primerNombre: matricula.Estudiante.primerNombre,
                     primerApellido: matricula.Estudiante.primerApellido,
                     email: matricula.Estudiante.email,
+                    id_usuario: matricula.Estudiante.Usuario ? matricula.Estudiante.Usuario.id : null, // Agrega el id_usuario
                     nombre_periodo: matricula.Periodo.nombre_periodo,
                     asignaturas: []
                 });
