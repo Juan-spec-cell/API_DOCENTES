@@ -61,6 +61,9 @@ rutas.get('/', controladorActividad.inicio);
  *                       valor:
  *                         type: number
  *                         description: Nota de la actividad.
+ *                       parcial:
+ *                         type: string
+ *                         description: Parcial de la actividad.
  *                       createdAt:
  *                         type: string
  *                         format: date-time
@@ -104,6 +107,9 @@ rutas.get('/listar', controladorActividad.listar);
  *               valor:
  *                 type: number
  *                 description: Nota de la actividad.
+ *               parcial:
+ *                 type: string
+ *                 description: Parcial de la actividad.
  *     responses:
  *       201:
  *         description: Actividad guardada con éxito.
@@ -133,6 +139,9 @@ rutas.get('/listar', controladorActividad.listar);
  *                     valor:
  *                       type: number
  *                       description: Nota de la actividad.
+ *                     parcial:
+ *                       type: string
+ *                       description: Parcial de la actividad.
  *       400:
  *         description: Error en la validación de datos.
  *       500:
@@ -151,6 +160,10 @@ rutas.post('/guardar',
     body("valor")
         .isFloat().withMessage('El valor debe ser un número')
         .notEmpty().withMessage('El valor no puede estar vacío'),
+    body("parcial")
+        .isString().withMessage('El parcial debe ser una cadena de texto')
+        .isIn(['primer parcial', 'segundo parcial', 'tercer parcial', 'reposicion']).withMessage('El parcial debe ser uno de los valores permitidos')
+        .notEmpty().withMessage('El parcial no puede estar vacío'),
     controladorActividad.guardar
 );
 

@@ -18,8 +18,8 @@ exports.guardar = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { nombre_asignatura, tipo_actividad, fecha, valor } = req.body;
-    console.log("Datos recibidos:", { nombre_asignatura, tipo_actividad, fecha, valor });
+    const { nombre_asignatura, tipo_actividad, fecha, valor, parcial } = req.body;
+    console.log("Datos recibidos:", { nombre_asignatura, tipo_actividad, fecha, valor, parcial });
 
     try {
         // Buscar la asignatura por su nombre
@@ -34,7 +34,8 @@ exports.guardar = async (req, res) => {
             asignaturaId: asignatura.id, 
             tipo_actividad,
             fecha,
-            valor // Añadir el campo valor
+            valor,
+            parcial 
         });
 
         res.status(201).json({
@@ -51,37 +52,34 @@ exports.guardar = async (req, res) => {
 };
 
 exports.listar = async (req, res) => {
-    let contenido = {
-        tipo: 0,
-        datos: [],
-        msj: [],
-    };
     try {
-        const data = await ModeloActividad.findAll({
-            include: [
-                {
-                    model: ModeloAsignatura,
-                    attributes: ['nombre_asignatura']
-                }
-            ]
+        const actividades = await ModeloActividad.findAll({
+            include: [{
+                model: ModeloAsignatura,
+                attributes: ['nombre_asignatura']
+            }]
         });
 
-        contenido.tipo = 1;
-        contenido.datos = data.map(actividad => ({
-            id: actividad.id,
-            nombre_actividad: actividad.tipo_actividad,
-            nombre_asignatura: actividad.Asignatura ? actividad.Asignatura.nombre_asignatura : null,
-            fecha: moment(actividad.fecha).format('DD/MM/YYYY'), // Formatea la fecha
-            valor: actividad.valor, // Añadir el campo valor
-            createdAt: moment(actividad.createdAt).format('DD/MM/YYYY'), // Formatea la fecha de creación
-            updatedAt: moment(actividad.updatedAt).format('DD/MM/YYYY') // Formatea la fecha de actualización
-        }));
-        res.status(200).json(contenido);
+        res.status(200).json({
+            tipo: 1,
+            datos: actividades.map(actividad => ({
+                id: actividad.id,
+                nombre_actividad: actividad.tipo_actividad,
+                nombre_asignatura: actividad.Asignatura.nombre_asignatura,
+                fecha: actividad.fecha,
+                valor: actividad.valor,
+                parcial: actividad.parcial, // Añadir el campo parcial
+                createdAt: actividad.createdAt,
+                updatedAt: actividad.updatedAt
+            })),
+            msj: []
+        });
     } catch (error) {
-        contenido.tipo = 0;
-        contenido.msj = "Error al cargar los datos de actividades";
-        res.status(500).json(contenido);
-        console.error(error);
+        console.error("Error al listar las actividades:", error);
+        res.status(500).json({
+            tipo: 0,
+            msj: ["Error al cargar los datos de actividades"]
+        });
     }
 };
 
