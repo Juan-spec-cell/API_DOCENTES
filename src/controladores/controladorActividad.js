@@ -14,14 +14,18 @@ exports.inicio = (req, res) => {
 exports.guardar = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log("Errores de validación:", errors.array());
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { nombre_asignatura, tipo_actividad, fecha } = req.body;
+    const { nombre_asignatura, tipo_actividad, fecha, valor } = req.body;
+    console.log("Datos recibidos:", { nombre_asignatura, tipo_actividad, fecha, valor });
+
     try {
         // Buscar la asignatura por su nombre
         const asignatura = await ModeloAsignatura.findOne({ where: { nombre_asignatura } });
         if (!asignatura) {
+            console.log("Asignatura no encontrada:", nombre_asignatura);
             return res.status(404).json({ error: 'Asignatura no encontrada' });
         }
 
@@ -29,7 +33,8 @@ exports.guardar = async (req, res) => {
         const nuevaActividad = await ModeloActividad.create({
             asignaturaId: asignatura.id, 
             tipo_actividad,
-            fecha
+            fecha,
+            valor // Añadir el campo valor
         });
 
         res.status(201).json({
@@ -67,6 +72,7 @@ exports.listar = async (req, res) => {
             nombre_actividad: actividad.tipo_actividad,
             nombre_asignatura: actividad.Asignatura ? actividad.Asignatura.nombre_asignatura : null,
             fecha: moment(actividad.fecha).format('DD/MM/YYYY'), // Formatea la fecha
+            valor: actividad.valor, // Añadir el campo valor
             createdAt: moment(actividad.createdAt).format('DD/MM/YYYY'), // Formatea la fecha de creación
             updatedAt: moment(actividad.updatedAt).format('DD/MM/YYYY') // Formatea la fecha de actualización
         }));

@@ -7,13 +7,23 @@ const actividad = sequelize.define('Actividad', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    valor: {
+        type: DataTypes.FLOAT,
+        allowNull: false
+    },
     fecha: {
         type: DataTypes.DATE,
         allowNull: false
     },
+    parcial: {
+        type: DataTypes.ENUM,
+        values: ['primer parcial', 'segundo parcial', 'tercer parcial', 'reposicion'],
+        allowNull: false
+    }
 }, {
     tableName: 'actividades'
 });
+
 asignatura.hasMany(actividad, { foreignKey: 'asignaturaId' });
 actividad.belongsTo(asignatura, { foreignKey: 'asignaturaId' });
 

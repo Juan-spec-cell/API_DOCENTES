@@ -58,6 +58,9 @@ rutas.get('/', controladorActividad.inicio);
  *                         type: string
  *                         format: date
  *                         description: Fecha de la actividad.
+ *                       valor:
+ *                         type: number
+ *                         description: Nota de la actividad.
  *                       createdAt:
  *                         type: string
  *                         format: date-time
@@ -98,6 +101,9 @@ rutas.get('/listar', controladorActividad.listar);
  *                 type: string
  *                 format: date
  *                 description: Fecha de la actividad.
+ *               valor:
+ *                 type: number
+ *                 description: Nota de la actividad.
  *     responses:
  *       201:
  *         description: Actividad guardada con éxito.
@@ -124,6 +130,9 @@ rutas.get('/listar', controladorActividad.listar);
  *                       type: string
  *                       format: date
  *                       description: Fecha de la actividad.
+ *                     valor:
+ *                       type: number
+ *                       description: Nota de la actividad.
  *       400:
  *         description: Error en la validación de datos.
  *       500:
@@ -139,6 +148,9 @@ rutas.post('/guardar',
     body("fecha")
         .isDate().withMessage('La fecha debe ser una fecha válida')
         .notEmpty().withMessage('La fecha no puede estar vacía'),
+    body("valor")
+        .isFloat().withMessage('El valor debe ser un número')
+        .notEmpty().withMessage('El valor no puede estar vacío'),
     controladorActividad.guardar
 );
 
