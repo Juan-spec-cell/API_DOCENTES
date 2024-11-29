@@ -3,6 +3,7 @@ const ModeloEstudiante = require('../modelos/Estudiante');
 const ModeloPeriodo = require('../modelos/periodo');
 const ModeloAsignatura = require('../modelos/asignatura');
 const ModeloUsuario = require('../modelos/usuario');
+const ModeloDocente = require('../modelos/docente');
 const { enviar, errores } = require('../configuracion/ayuda');
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
@@ -26,7 +27,7 @@ exports.listar = async (req, res) => {
                     include: [
                         {
                             model: ModeloUsuario, // Asegúrate de que este modelo esté definido y relacionado
-                            attributes: ['id'] // Incluye el id_usuario
+                            attributes: ['id', 'email'] // Incluye el id_usuario y el email
                         }
                     ],
                     attributes: ['primerNombre', 'primerApellido', 'email']
@@ -37,6 +38,12 @@ exports.listar = async (req, res) => {
                 },
                 {
                     model: ModeloAsignatura,
+                    include: [
+                        {
+                            model: ModeloDocente, // Asegúrate de que este modelo esté definido y relacionado
+                            attributes: ['primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido'] // Incluye el nombre del docente
+                        }
+                    ],
                     attributes: ['id', 'nombre_asignatura']
                 }
             ]
@@ -53,13 +60,15 @@ exports.listar = async (req, res) => {
                     primerApellido: matricula.Estudiante.primerApellido,
                     email: matricula.Estudiante.email,
                     id_usuario: matricula.Estudiante.Usuario ? matricula.Estudiante.Usuario.id : null, // Agrega el id_usuario
+                    usuario_email: matricula.Estudiante.Usuario ? matricula.Estudiante.Usuario.email : null, // Agrega el email del usuario
                     nombre_periodo: matricula.Periodo.nombre_periodo,
                     asignaturas: []
                 });
             }
             matriculasMap.get(estudianteId).asignaturas.push({
                 id: matricula.Asignatura.id,
-                nombre_asignatura: matricula.Asignatura.nombre_asignatura
+                nombre_asignatura: matricula.Asignatura.nombre_asignatura,
+                docente_nombre: matricula.Asignatura.Docente ? `${matricula.Asignatura.Docente.primerNombre} ${matricula.Asignatura.Docente.segundoNombre} ${matricula.Asignatura.Docente.primerApellido} ${matricula.Asignatura.Docente.segundoApellido}` : null // Agrega el nombre completo del docente
             });
         });
 
